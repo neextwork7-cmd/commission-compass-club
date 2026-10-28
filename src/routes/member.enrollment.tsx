@@ -12,7 +12,7 @@ type Row = { id: number; life_id: string; full_name?: string; created_at: string
 type Day = { day: string; binary_total: string; enrollment_total: string; paid: string; events: number };
 type ENode = {
   user_id: number; life_id: string; full_name?: string | null; created_at: string;
-  active: boolean; purchased: number; directs: number; team_total: number; children: ENode[];
+  active: boolean; purchased: number; bv?: number; directs: number; team_total: number; children: ENode[];
   legs?: { life_id: string; total: number; carry: number; paired: number }[]; pairs?: number; events?: number; earned?: number;
 };
 const tk = (v: string | number) => `৳${Number(v).toFixed(3)}`;
@@ -31,6 +31,7 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
         <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
         <b>Joined: <span>{n.created_at.slice(0, 10)}</span></b><br />
         <b>Purchased: <span>{money(n.purchased)}</span></b><br />
+        <b>Current BV: <span>{Math.round(Number(n.bv) || 0)}</span></b><br />
         <b>Direct Team: <span>{n.directs}</span></b><br />
         <b>Total Downline: <span>{n.team_total}</span></b><br />
         <b>Status: <span>{n.active ? "Active" : "Inactive"}</span></b><br />
