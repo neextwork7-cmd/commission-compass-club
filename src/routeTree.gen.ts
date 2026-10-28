@@ -57,6 +57,7 @@ import { Route as AdminSalesReportRouteImport } from './routes/admin.sales-repor
 import { Route as AdminScrollNewsRouteImport } from './routes/admin.scroll-news'
 import { Route as AdminSiteConfigRouteImport } from './routes/admin.site-config'
 import { Route as AdminStatementsRouteImport } from './routes/admin.statements'
+import { Route as AdminTestLabRouteImport } from './routes/admin.test-lab'
 import { Route as AdminTransfersRouteImport } from './routes/admin.transfers'
 import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
 import { Route as AdminLoginRouteImport } from './routes/admin_.login'
@@ -322,6 +323,11 @@ const AdminStatementsRoute = AdminStatementsRouteImport.update({
   path: '/statements',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTestLabRoute = AdminTestLabRouteImport.update({
+  id: '/test-lab',
+  path: '/test-lab',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTransfersRoute = AdminTransfersRouteImport.update({
   id: '/transfers',
   path: '/transfers',
@@ -491,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/admin/scroll-news': typeof AdminScrollNewsRoute
   '/admin/site-config': typeof AdminSiteConfigRoute
   '/admin/statements': typeof AdminStatementsRoute
+  '/admin/test-lab': typeof AdminTestLabRoute
   '/admin/transfers': typeof AdminTransfersRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -563,6 +570,7 @@ export interface FileRoutesByTo {
   '/admin/scroll-news': typeof AdminScrollNewsRoute
   '/admin/site-config': typeof AdminSiteConfigRoute
   '/admin/statements': typeof AdminStatementsRoute
+  '/admin/test-lab': typeof AdminTestLabRoute
   '/admin/transfers': typeof AdminTransfersRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/admin/login': typeof AdminLoginRoute
@@ -638,6 +646,7 @@ export interface FileRoutesById {
   '/admin/scroll-news': typeof AdminScrollNewsRoute
   '/admin/site-config': typeof AdminSiteConfigRoute
   '/admin/statements': typeof AdminStatementsRoute
+  '/admin/test-lab': typeof AdminTestLabRoute
   '/admin/transfers': typeof AdminTransfersRoute
   '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/admin_/login': typeof AdminLoginRoute
@@ -714,6 +723,7 @@ export interface FileRouteTypes {
     | '/admin/scroll-news'
     | '/admin/site-config'
     | '/admin/statements'
+    | '/admin/test-lab'
     | '/admin/transfers'
     | '/admin/withdrawals'
     | '/admin/login'
@@ -786,6 +796,7 @@ export interface FileRouteTypes {
     | '/admin/scroll-news'
     | '/admin/site-config'
     | '/admin/statements'
+    | '/admin/test-lab'
     | '/admin/transfers'
     | '/admin/withdrawals'
     | '/admin/login'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/admin/scroll-news'
     | '/admin/site-config'
     | '/admin/statements'
+    | '/admin/test-lab'
     | '/admin/transfers'
     | '/admin/withdrawals'
     | '/admin_/login'
@@ -1259,6 +1271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStatementsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/test-lab': {
+      id: '/admin/test-lab'
+      path: '/test-lab'
+      fullPath: '/admin/test-lab'
+      preLoaderRoute: typeof AdminTestLabRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/transfers': {
       id: '/admin/transfers'
       path: '/transfers'
@@ -1449,6 +1468,7 @@ interface AdminRouteChildren {
   AdminScrollNewsRoute: typeof AdminScrollNewsRoute
   AdminSiteConfigRoute: typeof AdminSiteConfigRoute
   AdminStatementsRoute: typeof AdminStatementsRoute
+  AdminTestLabRoute: typeof AdminTestLabRoute
   AdminTransfersRoute: typeof AdminTransfersRoute
   AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1473,6 +1493,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminScrollNewsRoute: AdminScrollNewsRoute,
   AdminSiteConfigRoute: AdminSiteConfigRoute,
   AdminStatementsRoute: AdminStatementsRoute,
+  AdminTestLabRoute: AdminTestLabRoute,
   AdminTransfersRoute: AdminTransfersRoute,
   AdminWithdrawalsRoute: AdminWithdrawalsRoute,
   AdminIndexRoute: AdminIndexRoute,
