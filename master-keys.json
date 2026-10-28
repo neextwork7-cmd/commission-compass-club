@@ -1,0 +1,7 @@
+{
+  "_note": "LifeOS master key (plain, editable). Change the value here; the server needs the same file.",
+  "active": "MASTER_KEY",
+  "keys": {
+    "MASTER_KEY": "10"
+  }
+}

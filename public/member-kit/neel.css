@@ -1,0 +1,174 @@
+/* Life OS member panel — a scoped 1:1 port of the reference panel stylesheet
+   (style.css + ddsmoothmenu.css) at its native 1000px canvas, in Life OS branding.
+   Everything is scoped under .neel / .neel-login-page so public pages are untouched.
+   The canvas is scaled as a whole by MemberShell / NeelFrame. */
+:root {
+  --lo-blue: #083E88;
+  --lo-blue-deep: #052A5B;
+  --lo-hover: #FCAF3F;
+  --lo-yellow: #FFFF00;
+  --lo-share: #181854;
+  --lo-link: #0577B5;
+  --lo-tree-link: #0077C0;
+  --lo-rule: #AAA;
+  --lo-error: #FF0000;
+  --lo-success: #006600;
+  --lo-reference-background: url('/__l5e/assets-v1/ae43fcdc-af97-4169-b921-d2900789c2f6/reference-member-repeat.png');
+}
+
+/* ---------- Page background + canvas ---------- */
+.neel-viewport { background: var(--lo-reference-background) repeat #26968f; min-height: 100vh; overflow-x: hidden; padding: 0 0 1px; }
+.neel { width: 1000px; margin: 5px auto 0; box-shadow: 0 3px 12px #111; background: #fff; color: #000; font-family: Tahoma, Geneva, sans-serif; font-size: 12px; line-height: 1.3em; text-align: left; }
+
+/* Undo the app-wide reset inside the reference canvas so native table/form metrics match. */
+.neel, .neel *, .neel *::before, .neel *::after { box-sizing: content-box; }
+.neel select, .neel input[type="submit"], .neel input[type="button"], .neel input[type="reset"], .neel button { box-sizing: border-box; }
+.neel table { border-collapse: separate; text-indent: 0; border-color: gray; box-sizing: border-box; margin: 0; background-color: transparent; max-width: none; }
+.neel caption { padding: 0; color: inherit; text-align: center; caption-side: top; }
+.neel th { text-align: center; }
+.neel label { display: inline; margin: 0; font-size: inherit; width: auto; }
+/* The reference uses an XHTML Transitional doctype (limited-quirks): image-only lines get no text strut. */
+.neel img { display: inline; vertical-align: top; max-width: none; border: none; }
+.neel input, .neel select, .neel textarea, .neel button { line-height: normal; color: #000; margin: 0; }
+.neel input[type="radio"], .neel input[type="checkbox"] { margin: 3px 3px 0 5px; vertical-align: baseline; }
+.neel hr { height: 0; color: gray; border: 1px inset; margin: 0.5em 0; overflow: visible; }
+.neel ul, .neel ol { list-style: none; margin: 0; padding: 0; }
+.neel th { font-weight: bold; }
+.neel center { display: block; text-align: center; }
+
+/* ---------- Base typography (style.css) ---------- */
+.neel a, .neel a:link, .neel a:visited { color: #000; font-weight: normal; text-decoration: none; }
+.neel a:hover { text-decoration: underline; }
+.neel p { margin: 0 0 10px 0; padding: 0; }
+.neel table, .neel div, .neel p, .neel a, .neel input { font-size: 12px; }
+.neel h1, .neel h2, .neel h3, .neel h4, .neel h5, .neel h6 { color: #333; font-weight: normal; font-family: inherit; line-height: inherit; }
+.neel h1 { font-size: 48px; margin: 0 0 30px; padding: 5px 0; }
+.neel h2 { font-size: 24px; margin: 0 0 15px; padding: 10px; }
+.neel h3 { font-size: 20px; margin: 0 0 20px; padding: 0; }
+.neel h4 { font-size: 18px; margin: 0 0 15px; padding: 0; }
+.neel h5 { font-size: 16px; margin: 0 0 10px; padding: 0; }
+.neel h6 { font-size: 12px; margin: 0 0 5px; padding: 0; }
+.neel b, .neel strong { font-weight: bold; }
+.neel sup { color: red; vertical-align: super; font-size: smaller; line-height: inherit; position: static; top: auto; }
+.neel input[type="file"]::file-selector-button { all: revert; }
+.neel .cleaner, .neel .clear { clear: both; }
+.neel .error { color: var(--lo-error); font-weight: bold; }
+.neel .success { color: var(--lo-success); font-weight: bold; }
+
+/* ---------- Form controls ---------- */
+.neel .input_field, .neel input[type="text"], .neel input[type="password"], .neel input[type="number"], .neel input[type="tel"], .neel input[type="email"], .neel input[type="date"], .neel input:not([type]) { width: 180px; padding: 2px 5px; background: #fff; border: 1px solid var(--lo-rule); font-family: Tahoma, Geneva, sans-serif; }
+.neel select { width: 192px; padding: 2px 5px; background: #fff; border: 1px solid var(--lo-rule); font-size: 13.3333px; }
+.neel textarea { width: 180px; height: 60px; padding: 2px 5px; background: #fff; border: 1px solid var(--lo-rule); font-family: Arial, Helvetica, sans-serif; resize: none; font-size: 14px; }
+.neel .submit_btn, .neel input[type="button"], .neel input[type="submit"], .neel button[type="submit"] { padding: 2px 5px; margin: 0; background: #fff; border: 1px solid var(--lo-rule); cursor: pointer; font-size: 12px; font-family: Tahoma, Geneva, sans-serif; }
+.neel input[type="file"] { font-size: 12px; border: 0; padding: 0; background: none; width: auto; }
+.neel input:disabled, .neel button:disabled { cursor: default; }
+.neel input[readonly] { background: #fff; }
+
+/* ---------- Wrapper, header, menu (ddsmoothmenu.css) ---------- */
+.neel .mid_image { width: 1000px; padding: 0; background: #fff; }
+.neel #header { width: 1000px; margin: 0 auto; text-align: center; }
+.neel #header .logo { width: 100%; padding: 0; }
+.neel #header .logo img { width: 1000px; height: 150px; display: inline; vertical-align: baseline; }
+.neel #header a { display: block; line-height: 0; font-size: 0; }
+.neel #menu { height: 50px; background: var(--lo-blue); padding-left: 10px; width: auto; position: relative; z-index: 100; }
+.neel #menu ul { z-index: 100; margin: 0; padding: 0; list-style-type: none; }
+.neel #menu ul li { position: relative; display: inline; float: left; }
+.neel #menu ul li a { display: block; position: relative; height: 50px; padding: 0 15px; line-height: 48px; font-size: 16px; color: #fff; text-align: center; text-decoration: none; font-weight: 400; outline: none; margin-left: 5px; }
+.neel #menu ul li a:hover, .neel #menu ul li a.selected { color: var(--lo-hover); text-decoration: none; }
+.neel #menu ul li ul { position: absolute; width: 200px; left: 0; top: 50px; background: var(--lo-blue-deep); }
+.neel #menu ul li ul > span { border-radius: 0 0 5px 5px; position: absolute; width: 200px; height: 15px; bottom: -15px; left: 0; background: var(--lo-blue-deep); }
+.neel #menu ul li ul li { display: list-item; float: none; }
+.neel #menu ul li ul li a { font-weight: 500; width: 177px; height: 32px; line-height: 32px; padding: 0 10px; margin: 0 0 0 1px; font-size: 14px; text-align: left; color: #fff; background: var(--lo-blue-deep); }
+.neel #menu ul li ul li a:hover, .neel #menu ul li ul li a.selected { color: var(--lo-hover); background: #0a0a0a; }
+.neel #menu > ul > li:last-child > ul { left: auto; right: 0; }
+.neel #menu br { clear: left; }
+
+/* ---------- Content area ---------- */
+.neel #main_member { padding: 10px 15px; min-height: 376px; }
+.neel .main_bg { min-height: 390px; }
+.neel .print { text-align: right; margin: 15px 0 0 0; padding: 10px; font-size: 16px; }
+.neel .print img { cursor: pointer; width: 32px; }
+.neel .my-userid { padding: 0 20px 20px 20px; font-size: 16px; text-align: right; }
+.neel .fotter { margin: 0 auto; width: 1000px; }
+.neel .fotter div { padding: 20px; background: var(--lo-blue); color: #fff; text-align: right; }
+.neel .fotter div a { color: #fff; }
+
+/* ---------- Report tables ---------- */
+.neel .table { border: 6px solid var(--lo-blue); border-top: 0; border-collapse: collapse; }
+.neel .table td { background: #fff; padding: 5px; border: 1px solid var(--lo-blue); }
+.neel .table th, .neel .table td { text-align: center; vertical-align: middle; }
+.neel .table th { border: 0; }
+.neel .table tfoot th { text-align: right; }
+.neel .table thead th, .neel .table tfoot th, .neel .table tbody th { color: #fff; font-size: 100%; background-color: var(--lo-blue); padding: 5px 2px; }
+.neel .table tbody th { font-family: Verdana; }
+.neel .table caption { color: var(--lo-blue); font-weight: bold; font-size: 14px; margin-bottom: 10px; text-decoration: underline; caption-side: top; padding: 0; text-align: center; }
+.neel .table td a { color: var(--lo-link); }
+
+/* ---------- Dashboard (inline styles of account.php) ---------- */
+.neel table td.right { text-align: right; padding-right: 10px; }
+.neel .table_wallet td { text-align: left; padding: 2px 5px; font-size: 14px; }
+.neel .table_wallet td.right { text-align: right; padding-right: 10px; }
+.neel .table_wallet td b { text-align: right; padding-right: 10px; display: block; }
+.neel .div_block { border: 1px solid var(--lo-blue-deep); margin: 0 0 20px 0; padding: 0 20px; text-align: center; }
+.neel .div_block a { font-size: 24px; }
+.neel .div_block a:hover { text-decoration: none; }
+.neel .profile_images_div td { font-size: 12px; }
+.neel .lo-status { background: var(--lo-blue); margin: 10px auto; width: 320px; padding: 10px; }
+.neel .lo-status h2 { text-align: center; color: #fff; }
+.neel .lo-status h4 { margin: 5px 0 8px 0; font-weight: 900; font-size: 24px; font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; color: var(--lo-yellow); }
+.neel .lo-share { background: var(--lo-share); padding: 10px; }
+.neel .lo-share p { font-size: 16px; color: #fff; }
+.neel .lo-share a, .neel .lo-share a:link, .neel .lo-share a:visited { color: #fff; }
+.neel .lo-share small { font-size: 12px; color: var(--lo-yellow); margin-right: 8px; }
+.neel .lo-share button { font-size: 12px; margin-left: 8px; vertical-align: middle; padding: 2px 5px; background: #fff; border: 1px solid var(--lo-rule); cursor: pointer; }
+
+/* ---------- Notice ---------- */
+.neel .noticed { padding: 0 20px; }
+.neel .noticed_div { padding: 10px 0; }
+.neel .noticed_div b { color: #0000FF; }
+.neel .noticed_div span { margin-right: 20px; }
+
+/* ---------- Placement tree (tree.php) ---------- */
+.neel #demo td { text-align: center; padding: 0; }
+.neel #demo td a, .neel #demo td a:link, .neel #demo td a:visited { color: var(--lo-tree-link); text-decoration: none; line-height: 20px; }
+.neel #demo td a:hover { color: #000; }
+.neel #demo img { border: 0; cursor: pointer; margin: 0 8px; }
+.neel #demo th, .neel #demo td { box-sizing: content-box; }
+.neel #demo th { padding: 2px; }
+.neel #demo .lo-node { position: relative; display: inline-block; }
+.neel .lo-tree-control { display: inline; padding: 0; border: 0; background: transparent; vertical-align: top; font-size: 0; line-height: 0; cursor: pointer; }
+.neel .lo-tree-control:focus-visible { outline: 2px solid var(--lo-tree-link); outline-offset: 2px; }
+.neel .tooltip { display: none; position: absolute; left: 50%; top: -182px; transform: translateX(-50%); z-index: 60; box-sizing: content-box; background: var(--lo-tree-link); border: 1px solid var(--lo-tree-link); font-size: 10px; height: 160px; width: 180px; padding: 10px; line-height: 20px; color: #fff; margin: 60px 0 0 0; border-radius: 15px; text-align: left; cursor: default; opacity: 1; visibility: visible; font-family: inherit; white-space: normal; word-wrap: normal; }
+.neel .tooltip b { font-size: 10px; display: inline-block; width: 100%; font-weight: bold; }
+.neel .tooltip b span { float: right; }
+.neel .tooltip br { display: none; }
+.neel #demo .lo-node:hover .tooltip, .neel #demo .lo-node.open .tooltip { display: block; }
+
+/* ---------- Register form ---------- */
+.neel a.button_link, .neel a.button_link:link, .neel a.button_link:visited { background: var(--lo-blue); color: #fff; padding: 5px 15px; border: 3px solid var(--lo-blue); border-radius: 10px; font-size: 14px; }
+.neel a.button_link:hover { background: #fff; color: var(--lo-blue); text-decoration: none; }
+.neel .lo-photo-preview { display: block; width: 60px; height: 70px; object-fit: cover; margin-top: 3px; border: 1px solid var(--lo-blue); }
+
+/* ---------- Reference captcha image look ---------- */
+.neel .lo-captcha-img { border: thin solid #000; border-radius: 5px; }
+
+/* ---------- Login (index.php) ---------- */
+.neel-login-page { min-height: 100vh; margin: 0; padding: 0; color: #000; font-family: Tahoma, Geneva, sans-serif; font-size: 12px; line-height: 1.3em; }
+.neel-login-page *, .neel-login-page *::before, .neel-login-page *::after { box-sizing: content-box; }
+.neel-login-page input[type="submit"], .neel-login-page input[type="button"] { box-sizing: border-box; }
+.neel-login-page .lo-login-wrap { margin: 10px auto 0 auto; width: 500px; max-width: 100%; text-align: center; }
+.neel-login-page .login_logo { text-align: center; margin: 15px auto 0; width: 330px; display: block; }
+.neel-login-page .form { background: rgba(255, 255, 255, 0.5); border-radius: 30px; width: 330px; margin: 10px auto 0; display: block; }
+.neel-login-page .form a { color: var(--lo-blue); font-weight: bold; text-decoration: none; }
+.neel-login-page .form a:hover { text-decoration: underline; }
+.neel-login-page table { border-collapse: separate; margin: 0 auto; text-indent: 0; box-sizing: border-box; }
+.neel-login-page th { text-align: center; font-weight: bold; }
+.neel-login-page td, .neel-login-page th { padding: 5px; font-size: 12px; }
+.neel-login-page img { display: inline; vertical-align: baseline; max-width: none; }
+.neel-login-page input[type="text"], .neel-login-page input[type="password"] { padding: 6px 10px; width: 200px; font-size: 14px; text-align: center; background: #fff; border: 1px solid var(--lo-rule); color: #000; font-family: Tahoma, Geneva, sans-serif; line-height: normal; margin: 0; }
+.neel-login-page input[type="submit"], .neel-login-page input[type="button"] { padding: 2px 5px; margin: 0; background: #fff; border: 1px solid var(--lo-rule); color: #000; font-size: 12px; font-family: Tahoma, Geneva, sans-serif; cursor: pointer; line-height: normal; }
+.neel-login-page .lo-captcha-btn { display: inline-block; padding: 0; margin: 0; border: 0; background: none; cursor: pointer; line-height: 0; vertical-align: top; margin-bottom: 4.59375px; }
+.neel-login-page .lo-captcha-btn img { border: thin solid #000; border-radius: 5px; display: inline; }
+.neel-login-page .lo-captcha-btn span { display: inline-block; width: 140px; height: 30px; line-height: 30px; border: thin solid #000; border-radius: 5px; background: var(--lo-blue); color: #fff; font-size: 12px; }
+.neel-login-page .lo-login-error { color: var(--lo-error); font-weight: bold; }
+.neel-login-page .lo-login-footer { text-align: center; line-height: 24px; background: rgba(13, 176, 214, 0.5); color: #000033; padding: 20px; border-radius: 0 0 30px 30px; }
