@@ -64,7 +64,7 @@ for ($i = 1; $i <= $members; $i++) {
     $active = array_keys(array_filter($accounts, fn ($a) => $a['active']));
     $pick = mt_rand(0, 9) < 6 ? $active[max(0, count($active) - 1 - mt_rand(0, 3))] : $active[mt_rand(0, count($active) - 1)];
     $team = mt_rand(0, 1) ? 'L' : 'R';
-    $r = call('POST', '/api/member/register', ['name' => "Sim $i", 'phone' => sprintf('019%08d', $i), 'username' => "sim$i", 'password' => 'testpass', 'confirm_password' => 'testpass', 'accepted_terms' => 1, 'referral_code' => $accounts[$pick]['code'], 'team' => $team]);
+    $r = call('POST', '/api/member/register', ['name' => "Sim $i", 'phone' => sprintf('019%08d', $i), 'username' => "sim$i", 'password' => 'testpass', 'confirm_password' => 'testpass', 'accepted_terms' => 1, 'email' => "sim$i@example.test", 'blood_group' => 'O+', 'district' => 'Dhaka', 'post_code' => '1207', 'address_current' => 'Sim address', 'nid_number' => "SIMNID$i", 'referral_code' => $accounts[$pick]['code'], 'team' => $team]);
     if ($r['status'] !== 200) { check("register sim$i", false, $r['raw']); continue; }
     $tok = $r['data']['token'] ?? null;
     $m = call('GET', '/api/member/me', null, $tok)['data'];
