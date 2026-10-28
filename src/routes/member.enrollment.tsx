@@ -89,8 +89,8 @@ function Enrollment() {
                 {all.length > 0 && <Down />}
               </div>
               {all.length > 0 && (
-                <div style={{ overflowX: "auto", padding: "0 0 8px" }} role="region" aria-label="Enrollment downline users" tabIndex={0}>
-                  <div className="eo-kids" style={{ minWidth: "100%", justifyContent: "center" }}>
+                <div style={{ overflowX: "auto", overflowY: "hidden", padding: "0 0 8px" }} role="region" aria-label="Enrollment downline users" tabIndex={0}>
+                  <div className="eo-kids">
                     {all.map((c) => (
                       <div className="eo-kid" key={c.user_id}>
                         <Down />
