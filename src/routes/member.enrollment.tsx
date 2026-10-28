@@ -39,6 +39,7 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
 }
 
 const ARROW = "/member-kit/neel/tree-arrow.png";
+const ARROW_DOWN = "/member-kit/neel/tree-arrow-down.png";
 
 /** One enrollment level as a genealogy-style table row: every person in its own cell, arrow row below connecting to the next level. */
 function Level({ nodes, w, openId, onToggle }: { nodes: ENode[]; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
