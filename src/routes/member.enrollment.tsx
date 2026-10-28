@@ -56,27 +56,6 @@ const TREE_CSS = `
 
 function Down() { return <span className="eo-down" aria-hidden="true"><i /><b /></span>; }
 
-function TreeNode({ n, w, openId, onToggle }: { n: ENode; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
-  return (
-    <div className="eo-node">
-      <Person n={n} w={w} open={n.user_id === openId} onToggle={onToggle} />
-      {n.children.length > 0 && (
-        <>
-          <Down />
-          <div className="eo-kids">
-            {n.children.map((c) => (
-              <div className="eo-kid" key={c.user_id}>
-                <Down />
-                <TreeNode n={c} w={Math.max(64, w - 16)} openId={openId} onToggle={onToggle} />
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 function Enrollment() {
   const q = useMember<{ members: Row[]; daily: Day[] }>("placement", "/placement");
   const tree = useMember<ENode | null>("enroll-tree", "/tree/enrollment/full");
