@@ -94,6 +94,7 @@ function PairCards({ data, loading }: { data: { day: string | null; pairs: Pair[
             </div>
             <div style={{ borderTop: "1px dashed #bbb", marginTop: 8, paddingTop: 6, fontSize: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <span>Event #{p.event_number}</span><span style={{ textAlign: "right" }}>{p.created_at?.slice(11, 16)}</span>
+              <span>Pair Amount: {tk((Number(p.a?.amount) || 0) + (Number(p.b?.amount) || 0))}</span><span style={{ textAlign: "right" }}>{(Number(p.a?.bv) || 0) + (Number(p.b?.bv) || 0)} BV</span>
               <span>Enrollment: {tk(p.enrollment_bill)}</span><span style={{ textAlign: "right" }}>Binary: {tk(p.binary_bill)}</span>
               <b>Paid ({p.selected_type}): {tk(p.actual_payout)}</b><span style={{ textAlign: "right" }}>{p.payout_status}</span>
             </div>
