@@ -34,7 +34,7 @@ final class Config
             $rt = LIFEOS_ROOT . '/runtime.php';
             if (is_file($rt)) {
                 $r = require $rt;
-                foreach (['commission_cron_enabled', 'cron_http_execute', 'cron_base_url'] as $k) {
+                foreach (['commission_cron_enabled', 'cron_http_execute', 'cron_base_url', 'test_lab_enabled'] as $k) {
                     if (is_array($r) && array_key_exists($k, $r)) self::$c[$k] = $r[$k];
                 }
             }
@@ -83,6 +83,7 @@ final class DB
         }
         $pdo->exec("SET time_zone = '+06:00'");
         if (Config::get('auto_setup', true)) Migrations::apply($pdo);
+        TestLab::applyClock($pdo);
         self::$pdo = $pdo;
         return self::$pdo;
     }

@@ -210,7 +210,7 @@ final class Commission
         if (DB::one('SELECT decision_key FROM lo_matching_decisions WHERE decision_key = ? FOR UPDATE', [$decisionKey]) !== null) return;
 
         $reserveBefore = max(0.0, (float) $sale['matching_reserve'] - (float) $sale['matching_paid']);
-        $today = date('Y-m-d');
+        $today = (string) DB::val('SELECT CURRENT_DATE()');
         DB::run('INSERT IGNORE INTO lo_daily_caps (user_id, cap_date) VALUES (?, ?)', [$beneficiaryId, $today]);
         $dailyBefore = (float) DB::val('SELECT paid FROM lo_daily_caps WHERE user_id = ? AND cap_date = ? FOR UPDATE', [$beneficiaryId, $today]);
         $storedCap = DB::val("SELECT v FROM lo_settings WHERE k = 'daily_matching_cap'");

@@ -15,6 +15,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
       { to: "/admin", label: "Dashboard (Company Info)" },
       { to: "/admin/site-config", label: "Site Config" },
       { to: "/admin/cron", label: "Cron Setup" },
+      { to: "/admin/test-lab", label: "Test Lab (1-Day Run)" },
       { to: "/admin/plan", label: "Plan & Ranks" },
       { to: "/admin/notice", label: "Account Notice" },
       { to: "/admin/scroll-news", label: "Scroll News" },
