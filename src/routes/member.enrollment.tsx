@@ -77,7 +77,7 @@ function Down() { return <span className="eo-down" aria-hidden="true"><i /><b />
 type PUser = { id: number; life_id: string; name: string | null; amount?: number; bv?: number } | null;
 type Pair = { id: number; created_at: string; a: PUser; b: PUser; event_number: number; selected_type: string; enrollment_bill: string; binary_bill: string; actual_payout: string; payout_status: string };
 
-function PUserView({ u, node }: { u: PUser; node?: ENode }) {
+function PUserView({ u, node }: { u: PUser; node: ENode | undefined }) {
   return (
     <div style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
       <Popover>
