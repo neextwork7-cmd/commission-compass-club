@@ -56,9 +56,49 @@ const TREE_CSS = `
 
 function Down() { return <span className="eo-down" aria-hidden="true"><i /><b /></span>; }
 
+type PUser = { id: number; life_id: string; name: string | null } | null;
+type Pair = { id: number; created_at: string; a: PUser; b: PUser; event_number: number; selected_type: string; enrollment_bill: string; binary_bill: string; actual_payout: string; payout_status: string };
+
+function PUserView({ u }: { u: PUser }) {
+  return (
+    <div style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
+      <img src="/member-kit/neel/blank.png" alt="" style={{ width: 64, borderRadius: "50%" }} />
+      <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u?.name || "—"}</div>
+      <div style={{ fontSize: 12, opacity: 0.8 }}>{u?.life_id ?? "?"}</div>
+    </div>
+  );
+}
+
+function PairCards({ data, loading }: { data?: { day: string | null; pairs: Pair[] }; loading: boolean }) {
+  return (
+    <div style={{ margin: "12px 0" }}>
+      <h4 style={{ margin: "0 0 8px" }}>Enrollment Pairs — Last Day {data?.day ? `(${data.day})` : ""}</h4>
+      {loading && <span>Loading…</span>}
+      {!loading && !data?.pairs?.length && <span className="error">No enrollment pairs yet.</span>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+        {data?.pairs?.map((p) => (
+          <div key={p.id} style={{ border: "1px solid #ccc", borderRadius: 10, padding: 10, background: "rgba(255,255,255,0.9)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <PUserView u={p.a} />
+              <div style={{ fontWeight: 800, fontSize: 18 }} aria-label="paired with">⇄</div>
+              <PUserView u={p.b} />
+            </div>
+            <div style={{ borderTop: "1px dashed #bbb", marginTop: 8, paddingTop: 6, fontSize: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <span>Event #{p.event_number}</span><span style={{ textAlign: "right" }}>{p.created_at?.slice(11, 16)}</span>
+              <span>Enrollment: {tk(p.enrollment_bill)}</span><span style={{ textAlign: "right" }}>Binary: {tk(p.binary_bill)}</span>
+              <b>Paid ({p.selected_type}): {tk(p.actual_payout)}</b><span style={{ textAlign: "right" }}>{p.payout_status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Enrollment() {
   const q = useMember<{ members: Row[]; daily: Day[] }>("placement", "/placement");
   const tree = useMember<ENode | null>("enroll-tree", "/tree/enrollment/full");
+  const pairs = useMember<{ day: string | null; pairs: Pair[] }>("enroll-pairs", "/enrollment/pairs");
   const [openId, setOpenId] = useState<number | null>(null);
   // Tapping anywhere outside a member closes the open info box (touch screens have no hover-out).
   useEffect(() => {
@@ -105,6 +145,7 @@ function Enrollment() {
         })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
+      <PairCards data={pairs.data} loading={pairs.isLoading} />
       <DataTable
         caption={<> Daily Matching — each matching pays only the higher of Binary / Enrollment bill (Left {left}, Right {rows.length - left}) </>}
         head={["Date", "Binary Bill", "Enrollment Bill", "Paid (one bill per matching)", "Events"]}
