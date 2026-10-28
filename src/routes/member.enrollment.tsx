@@ -122,6 +122,40 @@ function PairCards({ data, loading, nodes }: { data: { day: string | null; pairs
   );
 }
 
+/** BV usage summary: how each activation's BV is split by the plan, plus this member's enrollment leg BV used/carried. */
+const BV_SPLIT: [string, number][] = [["Service Cashback", 100], ["Direct Referral", 200], ["Matching Reserve", 300], ["Generation Bonus", 200], ["Rank & Reward Pool", 200]];
+function BvSummary({ n }: { n: ENode }) {
+  const bv = Math.round(Number(n.bv) || 0);
+  const legs = n.legs ?? [];
+  const total = legs.reduce((s, l) => s + (Number(l.total) || 0), 0);
+  const used = legs.reduce((s, l) => s + (Number(l.paired) || 0), 0);
+  const carry = legs.reduce((s, l) => s + (Number(l.carry) || 0), 0);
+  const box = { border: "1px solid #ccc", borderRadius: 10, padding: 10, background: "rgba(255,255,255,0.9)", fontSize: 12 } as const;
+  return (
+    <div style={{ margin: "12px 0" }}>
+      <h4 style={{ margin: "0 0 8px" }}>BV Summary</h4>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
+        <div style={box}>
+          <b>Your Current BV: {bv} BV</b>
+          {BV_SPLIT.map(([label, v]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between" }}><span>{label}</span><span>{bv ? Math.round((bv * v) / 1000) : 0} BV</span></div>
+          ))}
+        </div>
+        <div style={box}>
+          <b>Enrollment Leg BV</b>
+          {legs.map((l, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between" }}><span>Leg {i + 1} ({l.life_id})</span><span>{Math.round(l.total)} pt</span></div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Total Leg BV</span><span>{Math.round(total)} pt</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Used (Paired)</span><span>{Math.round(used)} pt</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Carry Forward</span><span>{Math.round(carry)} pt</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><b>Matching Earned</b><b>৳{money(n.earned)}</b></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Enrollment() {
   const q = useMember<{ members: Row[]; daily: Day[] }>("placement", "/placement");
   const tree = useMember<ENode | null>("enroll-tree", "/tree/enrollment/full");
@@ -166,6 +200,7 @@ function Enrollment() {
         })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
+      {tree.data && <BvSummary n={tree.data} />}
       <PairCards data={pairs.data} loading={pairs.isLoading} nodes={nodes} />
       <DataTable
         caption={<> Daily Matching — each matching pays only the higher of Binary / Enrollment bill (Left {left}, Right {rows.length - left}) </>}
