@@ -39,6 +39,7 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
 }
 
 const ARROW = "/member-kit/neel/tree-arrow.png";
+const ARROW_DOWN = "/member-kit/neel/tree-arrow-down.png";
 
 /** One enrollment level as a genealogy-style table row: every person in its own cell, arrow row below connecting to the next level. */
 function Level({ nodes, w, openId, onToggle }: { nodes: ENode[]; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
@@ -91,8 +92,14 @@ function Enrollment() {
       <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
         {tree.data && (
-          <table cellSpacing={0} cellPadding={2} style={{ margin: "0 auto" }}>
+          <table width="100%" cellSpacing={0} cellPadding={2} style={{ minWidth: 640 }}>
             <tbody>
+              <tr><th style={{ textAlign: "center", height: 40 }}> </th></tr>
+              <tr>
+                <th style={{ textAlign: "center", height: 60 }}>
+                  <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label="My enrollment tree" title="My enrollment tree" onClick={() => setOpenId(null)}><img className="link_img" src={ARROW_DOWN} alt="" style={{ width: 100 }} /></Button>
+                </th>
+              </tr>
               <Level nodes={[tree.data]} w={160} openId={openId} onToggle={setOpenId} />
             </tbody>
           </table>
