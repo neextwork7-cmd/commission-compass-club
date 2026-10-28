@@ -29,3 +29,24 @@ $router->post('/api/public/cron/settle', function () {
     MasterAuth::audit('cron.settle', $mode, ($result['failed'] ?? 0) === 0);
     Http::ok($result);
 });
+// ---- Admin Test Lab: only when test_lab_enabled=true in runtime config ----
+$router->get('/api/admin/test-lab', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::status());
+});
+$router->post('/api/admin/test-lab/run-day', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::runDay() + ['status' => \LifeOS\TestLab::status()]);
+});
+$router->post('/api/admin/test-lab/reset', function () {
+    Auth::admin();
+    $b = Http::body();
+    if (($b['confirm'] ?? '') !== 'RESET') throw new HttpError('Type RESET to confirm', 422);
+    $out = \LifeOS\TestLab::reset();
+    if (!empty($b['seed'])) $out += \LifeOS\TestLab::seed(300);
+    Http::ok($out + ['status' => \LifeOS\TestLab::status()]);
+});
+$router->post('/api/admin/test-lab/seed', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::seed(300) + ['status' => \LifeOS\TestLab::status()]);
+});

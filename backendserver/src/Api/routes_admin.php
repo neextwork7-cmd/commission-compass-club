@@ -201,7 +201,7 @@ $router->post('/api/admin/adjustments', function () {
 $router->post('/api/admin/statements/close', function () {
     Auth::admin();
     $b = Http::body();
-    $date = (string) ($b['date'] ?? date('Y-m-d', strtotime('-1 day')));
+    $date = (string) ($b['date'] ?? (string) DB::val('SELECT CURRENT_DATE() - INTERVAL 1 DAY'));
     $closed = \LifeOS\Engine\Statements::close($date);
     Http::ok(['date' => $date, 'statements_closed' => $closed]);
 });

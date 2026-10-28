@@ -10,13 +10,14 @@ use LifeOS\HttpError;
 /** Minute recovery runner. Uses the existing engine, never invents new sale events. */
 final class Settlement
 {
-    public static function run(bool $execute = false, int $batch = 100): array
+    public static function run(bool $execute = false, int $batch = 100, bool $testLab = false): array
     {
         if ($batch < 1 || $batch > 1000) throw new HttpError('Batch must be between 1 and 1000', 422);
-        if ($execute && Config::get('commission_cron_enabled', false) !== true) {
+        if ($testLab && !\LifeOS\TestLab::enabled()) throw new HttpError('Test lab is disabled', 403);
+        if ($execute && !$testLab && Config::get('commission_cron_enabled', false) !== true) {
             throw new HttpError('Commission cron execution requires approved server configuration', 403);
         }
-        if ($execute && DB::val("SELECT v FROM lo_settings WHERE k='financial_release_approved'") !== '1') {
+        if ($execute && !$testLab && DB::val("SELECT v FROM lo_settings WHERE k='financial_release_approved'") !== '1') {
             throw new HttpError('Financial release has not been approved', 403);
         }
         $lock = 'lifeos:settlement:' . (string) DB::val('SELECT DATABASE()');

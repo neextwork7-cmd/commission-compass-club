@@ -13,7 +13,8 @@ final class Statements
     {
         $zone = new \DateTimeZone('Asia/Dhaka');
         $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date, $zone);
-        $today = ($now ?? new \DateTimeImmutable('now', $zone))->setTimezone($zone)->format('Y-m-d');
+        $sim = $now === null ? \LifeOS\TestLab::clock() : null;
+        $today = $sim ?? ($now ?? new \DateTimeImmutable('now', $zone))->setTimezone($zone)->format('Y-m-d');
         return $parsed !== false && $parsed->format('Y-m-d') === $date && $date < $today;
     }
 
