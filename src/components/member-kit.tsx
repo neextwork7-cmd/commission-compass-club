@@ -19,7 +19,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
     label: "Sales View",
     items: [
       { to: "/member/tree", label: "Genealogy Tree" },
-      { to: "/member/placement", label: "Placement" },
+      { to: "/member/enrollment", label: "Enrollment" },
       { to: "/member/sponsors", label: "Sponsors List" },
       { to: "/member/statistics", label: "Statistics View" },
       { to: "/member/activation", label: "Package Activation" },

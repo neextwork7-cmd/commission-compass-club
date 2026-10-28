@@ -64,10 +64,10 @@ import { Route as MemberIndexRouteImport } from './routes/member.index'
 import { Route as MemberActivationRouteImport } from './routes/member.activation'
 import { Route as MemberChangePasswordRouteImport } from './routes/member.change-password'
 import { Route as MemberCommissionRouteImport } from './routes/member.commission'
+import { Route as MemberEnrollmentRouteImport } from './routes/member.enrollment'
 import { Route as MemberMatchingBinaryRouteImport } from './routes/member.matching-binary'
 import { Route as MemberMatchingPlacementRouteImport } from './routes/member.matching-placement'
 import { Route as MemberNoticeRouteImport } from './routes/member.notice'
-import { Route as MemberPlacementRouteImport } from './routes/member.placement'
 import { Route as MemberProfileRouteImport } from './routes/member.profile'
 import { Route as MemberReceiveReportRouteImport } from './routes/member.receive-report'
 import { Route as MemberRechargeRouteImport } from './routes/member.recharge'
@@ -357,6 +357,11 @@ const MemberCommissionRoute = MemberCommissionRouteImport.update({
   path: '/commission',
   getParentRoute: () => MemberRoute,
 } as any)
+const MemberEnrollmentRoute = MemberEnrollmentRouteImport.update({
+  id: '/enrollment',
+  path: '/enrollment',
+  getParentRoute: () => MemberRoute,
+} as any)
 const MemberMatchingBinaryRoute = MemberMatchingBinaryRouteImport.update({
   id: '/matching-binary',
   path: '/matching-binary',
@@ -370,11 +375,6 @@ const MemberMatchingPlacementRoute = MemberMatchingPlacementRouteImport.update({
 const MemberNoticeRoute = MemberNoticeRouteImport.update({
   id: '/notice',
   path: '/notice',
-  getParentRoute: () => MemberRoute,
-} as any)
-const MemberPlacementRoute = MemberPlacementRouteImport.update({
-  id: '/placement',
-  path: '/placement',
   getParentRoute: () => MemberRoute,
 } as any)
 const MemberProfileRoute = MemberProfileRouteImport.update({
@@ -497,10 +497,10 @@ export interface FileRoutesByFullPath {
   '/member/activation': typeof MemberActivationRoute
   '/member/change-password': typeof MemberChangePasswordRoute
   '/member/commission': typeof MemberCommissionRoute
+  '/member/enrollment': typeof MemberEnrollmentRoute
   '/member/matching-binary': typeof MemberMatchingBinaryRoute
   '/member/matching-placement': typeof MemberMatchingPlacementRoute
   '/member/notice': typeof MemberNoticeRoute
-  '/member/placement': typeof MemberPlacementRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/receive-report': typeof MemberReceiveReportRoute
   '/member/recharge': typeof MemberRechargeRoute
@@ -569,10 +569,10 @@ export interface FileRoutesByTo {
   '/member/activation': typeof MemberActivationRoute
   '/member/change-password': typeof MemberChangePasswordRoute
   '/member/commission': typeof MemberCommissionRoute
+  '/member/enrollment': typeof MemberEnrollmentRoute
   '/member/matching-binary': typeof MemberMatchingBinaryRoute
   '/member/matching-placement': typeof MemberMatchingPlacementRoute
   '/member/notice': typeof MemberNoticeRoute
-  '/member/placement': typeof MemberPlacementRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/receive-report': typeof MemberReceiveReportRoute
   '/member/recharge': typeof MemberRechargeRoute
@@ -644,10 +644,10 @@ export interface FileRoutesById {
   '/member/activation': typeof MemberActivationRoute
   '/member/change-password': typeof MemberChangePasswordRoute
   '/member/commission': typeof MemberCommissionRoute
+  '/member/enrollment': typeof MemberEnrollmentRoute
   '/member/matching-binary': typeof MemberMatchingBinaryRoute
   '/member/matching-placement': typeof MemberMatchingPlacementRoute
   '/member/notice': typeof MemberNoticeRoute
-  '/member/placement': typeof MemberPlacementRoute
   '/member/profile': typeof MemberProfileRoute
   '/member/receive-report': typeof MemberReceiveReportRoute
   '/member/recharge': typeof MemberRechargeRoute
@@ -720,10 +720,10 @@ export interface FileRouteTypes {
     | '/member/activation'
     | '/member/change-password'
     | '/member/commission'
+    | '/member/enrollment'
     | '/member/matching-binary'
     | '/member/matching-placement'
     | '/member/notice'
-    | '/member/placement'
     | '/member/profile'
     | '/member/receive-report'
     | '/member/recharge'
@@ -792,10 +792,10 @@ export interface FileRouteTypes {
     | '/member/activation'
     | '/member/change-password'
     | '/member/commission'
+    | '/member/enrollment'
     | '/member/matching-binary'
     | '/member/matching-placement'
     | '/member/notice'
-    | '/member/placement'
     | '/member/profile'
     | '/member/receive-report'
     | '/member/recharge'
@@ -866,10 +866,10 @@ export interface FileRouteTypes {
     | '/member/activation'
     | '/member/change-password'
     | '/member/commission'
+    | '/member/enrollment'
     | '/member/matching-binary'
     | '/member/matching-placement'
     | '/member/notice'
-    | '/member/placement'
     | '/member/profile'
     | '/member/receive-report'
     | '/member/recharge'
@@ -1308,6 +1308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemberCommissionRouteImport
       parentRoute: typeof MemberRoute
     }
+    '/member/enrollment': {
+      id: '/member/enrollment'
+      path: '/enrollment'
+      fullPath: '/member/enrollment'
+      preLoaderRoute: typeof MemberEnrollmentRouteImport
+      parentRoute: typeof MemberRoute
+    }
     '/member/matching-binary': {
       id: '/member/matching-binary'
       path: '/matching-binary'
@@ -1327,13 +1334,6 @@ declare module '@tanstack/react-router' {
       path: '/notice'
       fullPath: '/member/notice'
       preLoaderRoute: typeof MemberNoticeRouteImport
-      parentRoute: typeof MemberRoute
-    }
-    '/member/placement': {
-      id: '/member/placement'
-      path: '/placement'
-      fullPath: '/member/placement'
-      preLoaderRoute: typeof MemberPlacementRouteImport
       parentRoute: typeof MemberRoute
     }
     '/member/profile': {
@@ -1484,10 +1484,10 @@ interface MemberRouteChildren {
   MemberActivationRoute: typeof MemberActivationRoute
   MemberChangePasswordRoute: typeof MemberChangePasswordRoute
   MemberCommissionRoute: typeof MemberCommissionRoute
+  MemberEnrollmentRoute: typeof MemberEnrollmentRoute
   MemberMatchingBinaryRoute: typeof MemberMatchingBinaryRoute
   MemberMatchingPlacementRoute: typeof MemberMatchingPlacementRoute
   MemberNoticeRoute: typeof MemberNoticeRoute
-  MemberPlacementRoute: typeof MemberPlacementRoute
   MemberProfileRoute: typeof MemberProfileRoute
   MemberReceiveReportRoute: typeof MemberReceiveReportRoute
   MemberRechargeRoute: typeof MemberRechargeRoute
@@ -1507,10 +1507,10 @@ const MemberRouteChildren: MemberRouteChildren = {
   MemberActivationRoute: MemberActivationRoute,
   MemberChangePasswordRoute: MemberChangePasswordRoute,
   MemberCommissionRoute: MemberCommissionRoute,
+  MemberEnrollmentRoute: MemberEnrollmentRoute,
   MemberMatchingBinaryRoute: MemberMatchingBinaryRoute,
   MemberMatchingPlacementRoute: MemberMatchingPlacementRoute,
   MemberNoticeRoute: MemberNoticeRoute,
-  MemberPlacementRoute: MemberPlacementRoute,
   MemberProfileRoute: MemberProfileRoute,
   MemberReceiveReportRoute: MemberReceiveReportRoute,
   MemberRechargeRoute: MemberRechargeRoute,
