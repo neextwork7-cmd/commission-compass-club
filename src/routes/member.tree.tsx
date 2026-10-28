@@ -4,7 +4,7 @@ import { Msg, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/member/tree")({
-  head: () => ({ meta: [{ title: "Genealogy Tree — Life OS Member" }, { name: "description", content: "Life OS binary genealogy tree." }, { property: "og:title", content: "Genealogy Tree — Life OS Member" }, { property: "og:description", content: "Life OS binary genealogy tree." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Binary Tree — Life OS Member" }, { name: "description", content: "Life OS binary tree." }, { property: "og:title", content: "Binary Tree — Life OS Member" }, { property: "og:description", content: "Life OS binary tree." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Tree,
 });
 
@@ -94,7 +94,7 @@ function Tree() {
   );
 
   return (
-    <Page title="Placement View">
+    <Page title="Binary View">
       <Msg text={q.error ? (q.error as Error).message : msg} />
       <table width="100%" cellSpacing={0} cellPadding={2} id="demo">
         <tbody>

@@ -18,7 +18,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
   {
     label: "Sales View",
     items: [
-      { to: "/member/tree", label: "Genealogy Tree" },
+      { to: "/member/tree", label: "Binary Tree" },
       { to: "/member/enrollment", label: "Enrollment" },
       { to: "/member/sponsors", label: "Sponsors List" },
       { to: "/member/statistics", label: "Statistics View" },
