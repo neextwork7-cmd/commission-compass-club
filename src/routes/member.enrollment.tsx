@@ -38,25 +38,34 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
   );
 }
 
-/** One enrollment level: all persons of this depth in a horizontal row, each connected down to its own children. */
+const ARROW = "/member-kit/neel/tree-arrow.png";
+
+/** One enrollment level as a genealogy-style table row: every person in its own cell, arrow row below connecting to the next level. */
 function Level({ nodes, w, openId, onToggle }: { nodes: ENode[]; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
   if (nodes.length === 0) return null;
+  const next = nodes.flatMap((n) => n.children);
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginTop: 10 }}>
-      {nodes.map((n) => (
-        <div key={n.user_id} style={{ textAlign: "center", minWidth: w + 20 }}>
-          <Person n={n} w={w} open={n.user_id === openId} onToggle={onToggle} />
-          {n.children.length > 0 && (
-            <>
-              <div style={{ lineHeight: 1, color: "var(--lo-tree-link)", fontSize: 18 }}>↓</div>
-              <div style={{ borderLeft: "1px solid var(--lo-tree-link)", marginLeft: w / 2 + 10, paddingLeft: 10 }}>
-                <Level nodes={n.children} w={Math.max(56, w - 24)} openId={openId} onToggle={onToggle} />
-              </div>
-            </>
-          )}
-        </div>
-      ))}
-    </div>
+    <>
+      <tr>
+        {nodes.map((n) => (
+          <td key={n.user_id} valign="top" align="center" style={{ minWidth: w + 24, padding: "4px 8px" }}>
+            <Person n={n} w={w} open={n.user_id === openId} onToggle={onToggle} />
+          </td>
+        ))}
+      </tr>
+      {next.length > 0 && (
+        <>
+          <tr>
+            {nodes.map((n) => (
+              <td key={n.user_id} align="center" style={{ padding: 0 }}>
+                {n.children.length > 0 ? <img className="link_img" src={ARROW} alt="" style={{ width: Math.min(240, n.children.length * (w - 20)) }} /> : " "}
+              </td>
+            ))}
+          </tr>
+          <Level nodes={next} w={Math.max(64, w - 20)} openId={openId} onToggle={onToggle} />
+        </>
+      )}
+    </>
   );
 }
 
@@ -81,7 +90,13 @@ function Enrollment() {
       <h3 style={{ margin: "10px 0 4px" }}>Enrollment Genealogy — আপনার স্পনসর করা সব ডাউনলাইন</h3>
       <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
-        {tree.data && <Level nodes={[tree.data]} w={120} openId={openId} onToggle={setOpenId} />}
+        {tree.data && (
+          <table cellSpacing={0} cellPadding={2} style={{ margin: "0 auto" }}>
+            <tbody>
+              <Level nodes={[tree.data]} w={160} openId={openId} onToggle={setOpenId} />
+            </tbody>
+          </table>
+        )}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
       <h3 style={{ margin: "14px 0 4px" }}>Enrollment Members</h3>
