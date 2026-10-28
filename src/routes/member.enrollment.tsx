@@ -45,8 +45,8 @@ const TREE_CSS = `
 .eo-down{display:flex;flex-direction:column;align-items:center;color:var(--lo-tree-link,currentColor)}
 .eo-down i{display:block;width:2px;height:18px;background:currentColor}
 .eo-down b{display:block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid currentColor}
-.eo-kids{display:flex;align-items:flex-start;justify-content:center}
-.eo-kid{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 10px;color:var(--lo-tree-link,currentColor)}
+.eo-kids{display:flex;align-items:flex-start;justify-content:flex-start;width:max-content;min-width:100%;margin:0 auto}
+.eo-kid{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding:0 10px;color:var(--lo-tree-link,currentColor)}
 .eo-kid::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:currentColor}
 .eo-kid:first-child::before{left:50%}
 .eo-kid:last-child::before{right:50%}
@@ -75,7 +75,7 @@ function Enrollment() {
   return (
     <Page title="Enrollment Team">
       <style>{TREE_CSS}</style>
-      <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
+      <div style={{ padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
         {tree.data && (() => {
           // You centered on screen; every downline user in one scrollable row below.
@@ -89,8 +89,8 @@ function Enrollment() {
                 {all.length > 0 && <Down />}
               </div>
               {all.length > 0 && (
-                <div style={{ overflowX: "auto", padding: "0 0 8px" }} role="region" aria-label="Enrollment downline users" tabIndex={0}>
-                  <div className="eo-kids" style={{ minWidth: "100%", justifyContent: "center" }}>
+                <div style={{ overflowX: "auto", overflowY: "hidden", padding: "0 0 8px" }} role="region" aria-label="Enrollment downline users" tabIndex={0}>
+                  <div className="eo-kids">
                     {all.map((c) => (
                       <div className="eo-kid" key={c.user_id}>
                         <Down />
