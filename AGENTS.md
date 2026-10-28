@@ -43,3 +43,4 @@
 - Extended registration fields stay in the legacy users/user_profiles tables through additive migrations, keeping existing accounts and legacy referral registrations compatible.
 - Minute settlement uses the existing activation engine and database advisory lock through CLI or a Master-HMAC-signed PHP cron URL; admin exposes only setup/status, never signing secrets, and shared immutable Statements closing cannot create another payout or reset sale counters.
 - Cron switches (commission_cron_enabled, cron_http_execute, cron_base_url) may live in non-secret backendserver/runtime.php, because signed Master writes cannot modify config.php/.env; finance release still needs the admin setting.
+- Plan compliance is checked by backendserver/tests/plan_simulation.php: it drives the real API and cron runner, then recomputes every commission with an independent model; run it on a fresh local DB only (it refuses non-local hosts).
