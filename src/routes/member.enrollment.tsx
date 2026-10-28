@@ -110,12 +110,21 @@ function Enrollment() {
       <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0" }} role="region" aria-label="Enrollment members" tabIndex={0}>
         {rows.length === 0 && <span className="error">No enrollment member found.</span>}
         {rows.map((r) => (
-          <div key={r.id} style={{ display: "inline-block", verticalAlign: "top", width: 150, margin: "0 4px", border: "1px solid var(--lo-tree-link)", padding: 6, textAlign: "center", whiteSpace: "normal" }}>
-            <b>{r.life_id}</b><br />{r.full_name ?? ""}<br />
-            Level {r.level} · {r.leg === "L" ? "Left" : "Right"}<br />
-            {Number(r.is_active) ? "Active" : "Inactive"}<br />
-            Binary {tk(r.binary_bill)}<br />Enrollment {tk(r.enrollment_bill)}<br /><b>Paid {tk(r.paid)}</b>
-          </div>
+          <span key={r.id} className={`lo-node${openId === -r.id ? " open" : ""}`} style={{ display: "inline-block", verticalAlign: "top", width: 110, margin: "0 6px", textAlign: "center", whiteSpace: "normal" }}>
+            <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${r.life_id}`} aria-expanded={openId === -r.id} onClick={() => setOpenId(openId === -r.id ? null : -r.id)}>
+              <img src="/member-kit/neel/blank.png" alt="" style={{ width: 90, opacity: Number(r.is_active) ? 0.9 : 0.6 }} />
+            </Button>
+            <br />
+            <a href="#" onClick={(e) => { e.preventDefault(); setOpenId(openId === -r.id ? null : -r.id); }}>User ID: {r.life_id}</a>
+            <span className="tooltip" role="tooltip" onClick={() => setOpenId(null)}>
+              <b>Full Name: <span>{r.full_name ?? ""}</span></b><br />
+              <b>Level: <span>{r.level} · {r.leg === "L" ? "Left" : "Right"}</span></b><br />
+              <b>Status: <span>{Number(r.is_active) ? "Active" : "Inactive"}</span></b><br />
+              <b>Binary: <span>{tk(r.binary_bill)}</span></b><br />
+              <b>Enrollment: <span>{tk(r.enrollment_bill)}</span></b><br />
+              <b>Paid: <span>{tk(r.paid)}</span></b><br />
+            </span>
+          </span>
         ))}
       </div>
       <DataTable
