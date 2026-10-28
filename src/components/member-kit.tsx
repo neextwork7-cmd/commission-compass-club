@@ -29,7 +29,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
     label: "Matching",
     items: [
       { to: "/member/matching-binary", label: "Matching Binary" },
-      { to: "/member/matching-placement", label: "Matching Placement" },
+      { to: "/member/matching-placement", label: "Matching Enrollment" },
     ],
   },
   {

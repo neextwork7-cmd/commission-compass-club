@@ -375,7 +375,8 @@ $router->get('/api/member/activations', function () {
 $router->get('/api/member/matching', function () {
     $u = Auth::member();
     Http::ok(DB::all(
-        'SELECT event_code, sale_id, event_number, selected_type, calculated_payout, actual_payout, payout_status, created_at
+        'SELECT event_code, sale_id, event_number, selected_type, enrollment_bill, binary_bill, calculated_payout, actual_payout,
+                reserve_before, reserve_after, daily_before, daily_after, payout_status, note, created_at
          FROM lo_matching_events WHERE beneficiary_id = ? ORDER BY id DESC LIMIT 200',
         [(int) $u['id']]
     ));
