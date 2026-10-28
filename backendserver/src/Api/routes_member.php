@@ -421,17 +421,17 @@ $router->get('/api/member/placement', function () {
 $router->get('/api/member/enrollment/pairs', function () {
     $u = Auth::member();
     $uid = (int) $u['id'];
-    $day = DB::val("SELECT DATE(MAX(v.created_at)) FROM lo_volume_pairs p JOIN lo_volumes v ON v.id = p.second_volume_id WHERE p.beneficiary_id = ? AND p.tree_type = 'ENROLLMENT'", [$uid]);
+    $day = DB::val("SELECT DATE(MAX(e.created_at)) FROM lo_volume_pairs p JOIN lo_matching_events e ON e.sale_id = p.sale_id AND e.beneficiary_id = p.beneficiary_id WHERE p.beneficiary_id = ? AND p.tree_type = 'ENROLLMENT'", [$uid]);
     if (!$day) { Http::ok(['day' => null, 'pairs' => []]); return; }
     $who = "(SELECT JSON_OBJECT('id', x.id, 'life_id', x.life_id, 'name', (SELECT pr.name FROM user_profiles pr WHERE pr.user_id = x.id ORDER BY pr.id LIMIT 1)) FROM lo_sales s JOIN users x ON x.id = s.user_id WHERE s.id = %s.sale_id)";
     $rows = DB::all(
-        "SELECT p.id, p.sale_id, v2.created_at, " . sprintf($who, 'v1') . " AS a, " . sprintf($who, 'v2') . " AS b,
+        "SELECT p.id, p.sale_id, e.created_at, " . sprintf($who, 'v1') . " AS a, " . sprintf($who, 'v2') . " AS b,
                 e.event_number, e.selected_type, e.enrollment_bill, e.binary_bill, e.actual_payout, e.payout_status
          FROM lo_volume_pairs p
          JOIN lo_volumes v1 ON v1.id = p.first_volume_id
          JOIN lo_volumes v2 ON v2.id = p.second_volume_id
-         LEFT JOIN lo_matching_events e ON e.sale_id = p.sale_id AND e.beneficiary_id = p.beneficiary_id
-         WHERE p.beneficiary_id = ? AND p.tree_type = 'ENROLLMENT' AND v2.created_at >= ? AND v2.created_at < DATE_ADD(?, INTERVAL 1 DAY)
+         JOIN lo_matching_events e ON e.sale_id = p.sale_id AND e.beneficiary_id = p.beneficiary_id
+         WHERE p.beneficiary_id = ? AND p.tree_type = 'ENROLLMENT' AND e.created_at >= ? AND e.created_at < DATE_ADD(?, INTERVAL 1 DAY)
          ORDER BY p.id DESC LIMIT 200", [$uid, $day, $day]);
     foreach ($rows as &$r) { $r['a'] = json_decode((string) $r['a'], true); $r['b'] = json_decode((string) $r['b'], true); }
     Http::ok(['day' => $day, 'pairs' => $rows]);
