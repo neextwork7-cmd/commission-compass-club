@@ -22,7 +22,7 @@ function TestLab() {
     if (confirmText && window.prompt(confirmText) !== "RESET") { setMsg("Cancelled — type RESET to confirm."); return; }
     setBusy(true); setMsg(`${label}…`);
     try {
-      const r = await adminApi<Record<string, unknown>>(path, { method: "POST", body });
+      const r = await adminApi<{ settled_date?: string; next_date?: string; processed?: number; statements_closed?: number; failed?: number; created?: number; usernames?: string; password?: string; removed_accounts?: number }>(path, { method: "POST", body });
       if (path.endsWith("run-day")) setMsg(`Settled ${r.settled_date}: ${r.processed} activations, ${r.statements_closed} statements closed, ${r.failed} failed. Software date is now ${r.next_date}.`);
       else if (r.created) setMsg(`${r.created} paid test members created (usernames ${r.usernames}, password ${r.password}). No commission yet — press Run 1 Day.`);
       else setMsg(`Removed ${r.removed_accounts} accounts. ROOT kept, all commission data cleared.`);
