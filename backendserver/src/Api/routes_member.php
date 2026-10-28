@@ -324,6 +324,13 @@ $router->get('/api/member/tree/enrollment/full', function () {
             $node = $build($c, $depth + 1);
             if ($node !== null) $children[] = $node;
         }
+        // Two biggest enrollment legs (the ones that pair), plus paired points and paid enrollment matching.
+        $legs = DB::all(
+            'SELECT l.leg_user_id, u.life_id, l.carry, l.consumed FROM lo_enroll_legs l JOIN users u ON u.id = l.leg_user_id
+             WHERE l.upline_id = ? ORDER BY (l.carry + l.consumed) DESC, l.leg_user_id ASC LIMIT 2', [$id]);
+        $pairs = (int) DB::val("SELECT COUNT(*) FROM lo_volume_pairs WHERE beneficiary_id = ? AND tree_type = 'ENROLLMENT'", [$id]);
+        $ev = DB::one("SELECT COUNT(*) AS c, COALESCE(SUM(actual_payout),0) AS s FROM lo_matching_events
+                       WHERE beneficiary_id = ? AND selected_type = 'ENROLLMENT' AND payout_status = 'PAID'", [$id]);
         return [
             'user_id' => $id,
             'life_id' => $n['life_id'],
@@ -333,6 +340,10 @@ $router->get('/api/member/tree/enrollment/full', function () {
             'purchased' => (float) $n['purchased'],
             'directs' => count($kids[$id] ?? []),
             'team_total' => ($size[$id] ?? 1) - 1,
+            'legs' => array_map(fn ($l) => ['life_id' => $l['life_id'], 'total' => (float) $l['carry'] + (float) $l['consumed'], 'carry' => (float) $l['carry'], 'paired' => (float) $l['consumed']], $legs),
+            'pairs' => $pairs,
+            'events' => (int) $ev['c'],
+            'earned' => (float) $ev['s'],
             'children' => $children,
         ];
     };

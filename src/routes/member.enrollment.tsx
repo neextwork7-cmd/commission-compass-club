@@ -13,6 +13,7 @@ type Day = { day: string; binary_total: string; enrollment_total: string; paid: 
 type ENode = {
   user_id: number; life_id: string; full_name?: string | null; created_at: string;
   active: boolean; purchased: number; directs: number; team_total: number; children: ENode[];
+  legs?: { life_id: string; total: number; carry: number; paired: number }[]; pairs?: number; events?: number; earned?: number;
 };
 const tk = (v: string | number) => `৳${Number(v).toFixed(3)}`;
 const money = (v?: number) => (Number(v) || 0).toFixed(2);
@@ -33,6 +34,12 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
         <b>Direct Team: <span>{n.directs}</span></b><br />
         <b>Total Downline: <span>{n.team_total}</span></b><br />
         <b>Status: <span>{n.active ? "Active" : "Inactive"}</span></b><br />
+        {(n.legs ?? []).map((l, i) => (
+          <span key={i}><b>Big Leg {i + 1}: <span>{l.life_id} — {Math.round(l.total)} pt (Paired {Math.round(l.paired)}, Carry {Math.round(l.carry)})</span></b><br /></span>
+        ))}
+        <b>Total Paired: <span>{n.pairs ?? 0}</span></b><br />
+        <b>Matching Events: <span>{n.events ?? 0}</span></b><br />
+        <b>Matching Earned: <span>{money(n.earned)}</span></b><br />
       </span>
     </span>
   );
