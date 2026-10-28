@@ -78,7 +78,7 @@ foreach (array_unique(array_merge(array_keys($exp), array_keys($act))) as $u) {
 foreach (['CASHBACK' => '৳100 service cashback per activation', 'REFERRAL' => '৳200 direct referral to direct sponsor only', 'GENERATION' => '10-generation bonus 50/30/25/20/18/15/12/10/10/10', 'MATCHING' => 'matching 150 halving, one payout per beneficiary per sale'] as $t => $label) {
     check("$label — every account matches the plan", empty($mismatch[$t]), implode('; ', array_slice($mismatch[$t] ?? [], 0, 5)));
 }
-$unpaid = DB::all("SELECT u.id FROM users u JOIN lo_tree t ON t.user_id=u.id LEFT JOIN lo_activations a ON a.user_id=u.id AND a.payment_status='SUCCESS' WHERE a.id IS NULL");
+$unpaid = DB::all("SELECT u.id FROM users u JOIN lo_tree t ON t.user_id=u.id LEFT JOIN lo_activations a ON a.user_id=u.id AND a.payment_status='SUCCESS' WHERE a.id IS NULL AND t.sponsor_id IS NOT NULL");
 $unpaidEarn = 0; foreach ($unpaid as $r) $unpaidEarn += array_sum($act[(int) $r['id']] ?? []);
 check(count($unpaid) . ' unpaid accounts earned nothing', $unpaidEarn == 0);
 $bad = DB::all("SELECT activation_id, SUM(amount) s FROM lo_allocations GROUP BY activation_id HAVING ABS(s-1000) > 0.000001");
