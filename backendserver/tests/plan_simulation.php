@@ -88,7 +88,7 @@ $tree = []; foreach (DB::all('SELECT user_id, sponsor_id, placement_parent_id, p
 $sales = DB::all("SELECT s.id, s.user_id, s.activation_id FROM lo_sales s JOIN lo_activations a ON a.id=s.activation_id WHERE a.payment_status='SUCCESS' ORDER BY s.id");
 $GEN = [1 => 50, 2 => 30, 3 => 25, 4 => 20, 5 => 18, 6 => 15, 7 => 12, 8 => 10, 9 => 10, 10 => 10];
 $exp = []; $add = function (int $u, string $t, float $a) use (&$exp) { $exp[$u][$t] = ($exp[$u][$t] ?? 0) + $a; };
-$isActive = []; $carry = []; $legs = []; $saleMatch = [];
+$daily = []; $isActive = []; $carry = []; $legs = []; $saleMatch = [];
 foreach ($sales as $s) {
     $u = (int) $s['user_id']; $sid = (int) $s['id']; $isActive[$u] = true;
     $add($u, 'CASHBACK', 100);
@@ -118,7 +118,13 @@ foreach ($sales as $s) {
         $leg = $cur; $cur = $tree[$cur]['sponsor_id'] !== null ? (int) $tree[$cur]['sponsor_id'] : null;
     }
     $n = 0;
-    foreach (array_keys($cand) as $b) { if (++$n > 11) break; $add($b, 'MATCHING', 150 / 2 ** ($n - 1)); }
+    foreach (array_keys($cand) as $b) {
+        if (++$n > 11) break;
+        // Daily cap ৳5,000 per ID: excess of this event is flushed, the event still counts.
+        $pay = max(0.0, min(150 / 2 ** ($n - 1), 5000 - ($daily[$b] ?? 0)));
+        $daily[$b] = ($daily[$b] ?? 0) + $pay;
+        if ($pay > 0) $add($b, 'MATCHING', $pay);
+    }
     $saleMatch[$sid] = min(11, $n);
 }
 
