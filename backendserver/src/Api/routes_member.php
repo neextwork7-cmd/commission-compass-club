@@ -316,7 +316,8 @@ $router->get('/api/member/tree/enrollment/full', function () {
         $n = DB::one(
             "SELECT u.life_id, u.created_at, t.is_active,
                     (SELECT p.name FROM user_profiles p WHERE p.user_id = u.id ORDER BY p.id LIMIT 1) AS full_name,
-                    (SELECT COALESCE(SUM(a.fee), 0) FROM lo_activations a WHERE a.user_id = u.id AND a.payment_status = 'SUCCESS') AS purchased
+                    (SELECT COALESCE(SUM(a.fee), 0) FROM lo_activations a WHERE a.user_id = u.id AND a.payment_status = 'SUCCESS') AS purchased,
+                    (SELECT a.bv FROM lo_activations a WHERE a.user_id = u.id AND a.payment_status = 'SUCCESS' ORDER BY a.id DESC LIMIT 1) AS bv
              FROM lo_tree t JOIN users u ON u.id = t.user_id WHERE t.user_id = ?", [$id]);
         if (!$n) return null;
         $children = [];
@@ -338,6 +339,7 @@ $router->get('/api/member/tree/enrollment/full', function () {
             'created_at' => $n['created_at'],
             'active' => (bool) $n['is_active'],
             'purchased' => (float) $n['purchased'],
+            'bv' => (int) $n['bv'],
             'directs' => count($kids[$id] ?? []),
             'team_total' => ($size[$id] ?? 1) - 1,
             'legs' => array_map(fn ($l) => ['life_id' => $l['life_id'], 'total' => (float) $l['carry'] + (float) $l['consumed'], 'carry' => (float) $l['carry'], 'paired' => (float) $l['consumed']], $legs),
