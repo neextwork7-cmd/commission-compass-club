@@ -69,7 +69,7 @@ function PUserView({ u }: { u: PUser }) {
   );
 }
 
-function PairCards({ data, loading }: { data?: { day: string | null; pairs: Pair[] }; loading: boolean }) {
+function PairCards({ data, loading }: { data: { day: string | null; pairs: Pair[] } | undefined; loading: boolean }) {
   return (
     <div style={{ margin: "12px 0" }}>
       <h4 style={{ margin: "0 0 8px" }}>Enrollment Pairs — Last Day {data?.day ? `(${data.day})` : ""}</h4>
