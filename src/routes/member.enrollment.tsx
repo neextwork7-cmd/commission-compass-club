@@ -63,7 +63,7 @@ const TREE_CSS = `
 
 function Down() { return <span className="eo-down" aria-hidden="true"><i /><b /></span>; }
 
-type PUser = { id: number; life_id: string; name: string | null } | null;
+type PUser = { id: number; life_id: string; name: string | null; amount?: number; bv?: number } | null;
 type Pair = { id: number; created_at: string; a: PUser; b: PUser; event_number: number; selected_type: string; enrollment_bill: string; binary_bill: string; actual_payout: string; payout_status: string };
 
 function PUserView({ u }: { u: PUser }) {
@@ -72,6 +72,8 @@ function PUserView({ u }: { u: PUser }) {
       <img src="/member-kit/neel/blank.png" alt="" style={{ width: 64, borderRadius: "50%" }} />
       <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u?.name || "—"}</div>
       <div style={{ fontSize: 12, opacity: 0.8 }}>{u?.life_id ?? "?"}</div>
+      <div style={{ fontSize: 12, fontWeight: 600 }}>{u ? `৳${money(u.amount)}` : ""}</div>
+      <div style={{ fontSize: 11, opacity: 0.75 }}>{u ? `${Number(u.bv ?? 0)} BV` : ""}</div>
     </div>
   );
 }

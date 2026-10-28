@@ -434,7 +434,7 @@ $router->get('/api/member/enrollment/pairs', function () {
     $uid = (int) $u['id'];
     $day = DB::val("SELECT DATE(MAX(e.created_at)) FROM lo_volume_pairs p JOIN lo_matching_events e ON e.sale_id = p.sale_id AND e.beneficiary_id = p.beneficiary_id WHERE p.beneficiary_id = ? AND p.tree_type = 'ENROLLMENT'", [$uid]);
     if (!$day) { Http::ok(['day' => null, 'pairs' => []]); return; }
-    $who = "(SELECT JSON_OBJECT('id', x.id, 'life_id', x.life_id, 'name', (SELECT pr.name FROM user_profiles pr WHERE pr.user_id = x.id ORDER BY pr.id LIMIT 1)) FROM lo_sales s JOIN users x ON x.id = s.user_id WHERE s.id = %s.sale_id)";
+    $who = "(SELECT JSON_OBJECT('id', x.id, 'life_id', x.life_id, 'name', (SELECT pr.name FROM user_profiles pr WHERE pr.user_id = x.id ORDER BY pr.id LIMIT 1), 'amount', act.fee, 'bv', act.bv) FROM lo_sales s JOIN lo_activations act ON act.id = s.activation_id JOIN users x ON x.id = s.user_id WHERE s.id = %s.sale_id)";
     $rows = DB::all(
         "SELECT p.id, p.sale_id, e.created_at, " . sprintf($who, 'v1') . " AS a, " . sprintf($who, 'v2') . " AS b,
                 e.event_number, e.selected_type, e.enrollment_bill, e.binary_bill, e.actual_payout, e.payout_status
