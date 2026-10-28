@@ -20,18 +20,13 @@ function check(string $name, bool $ok, string $detail = ''): void {
     global $fail, $pass; $ok ? $pass++ : $fail++;
     echo ($ok ? 'ok    ' : 'FAIL  ') . $name . ($ok || $detail === '' ? '' : "  [$detail]") . "\n";
 }
-function call(string $method, string $path, ?array $body = null, ?string $token = null): array {
-    $c = curl_init(API . $path);
-    $h = ['Content-Type: application/json']; if ($token) $h[] = "Authorization: Bearer $token";
-    curl_setopt_array($c, [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h, CURLOPT_POSTFIELDS => $body === null ? null : json_encode($body)]);
-    $raw = (string) curl_exec($c); $st = (int) curl_getinfo($c, CURLINFO_HTTP_CODE); curl_close($c);
 $accounts=DB::all("SELECT id FROM users");
 // ---------- 2. Independent plan model ----------
 $tree = []; foreach (DB::all('SELECT user_id, sponsor_id, placement_parent_id, placement_side FROM lo_tree') as $t) $tree[(int) $t['user_id']] = $t;
 $sales = DB::all("SELECT s.id, s.user_id, s.activation_id FROM lo_sales s JOIN lo_activations a ON a.id=s.activation_id WHERE a.payment_status='SUCCESS' ORDER BY s.id");
 $GEN = [1 => 50, 2 => 30, 3 => 25, 4 => 20, 5 => 18, 6 => 15, 7 => 12, 8 => 10, 9 => 10, 10 => 10];
 $exp = []; $add = function (int $u, string $t, float $a) use (&$exp) { $exp[$u][$t] = ($exp[$u][$t] ?? 0) + $a; };
-$daily = []; $isActive = []; $carry = []; $legs = []; $saleMatch = [];
+$daily = []; $isActive = [(int) DB::val("SELECT user_id FROM lo_tree WHERE sponsor_id IS NULL AND is_active=1 ORDER BY user_id LIMIT 1") => true]; $carry = []; $legs = []; $saleMatch = [];
 foreach ($sales as $s) {
     $u = (int) $s['user_id']; $sid = (int) $s['id']; $isActive[$u] = true;
     $add($u, 'CASHBACK', 100);
