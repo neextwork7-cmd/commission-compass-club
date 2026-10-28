@@ -38,35 +38,42 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
   );
 }
 
-const ARROW = "/member-kit/neel/tree-arrow.png";
-const ARROW_DOWN = "/member-kit/neel/tree-arrow-down.png";
+/** Org-chart connector styles: parent → down arrow → horizontal line across all children → down arrow into each child. */
+const TREE_CSS = `
+.eo-tree{display:inline-flex;flex-direction:column;align-items:center;min-width:100%}
+.eo-node{display:flex;flex-direction:column;align-items:center}
+.eo-down{display:flex;flex-direction:column;align-items:center;color:var(--lo-tree-link,currentColor)}
+.eo-down i{display:block;width:2px;height:18px;background:currentColor}
+.eo-down b{display:block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid currentColor}
+.eo-kids{display:flex;align-items:flex-start;justify-content:center}
+.eo-kid{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 10px;color:var(--lo-tree-link,currentColor)}
+.eo-kid::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:currentColor}
+.eo-kid:first-child::before{left:50%}
+.eo-kid:last-child::before{right:50%}
+.eo-kid:only-child::before{display:none}
+.eo-kid>.eo-node{color:initial}
+`;
 
-/** One enrollment level as a genealogy-style table row: every person in its own cell, arrow row below connecting to the next level. */
-function Level({ nodes, w, openId, onToggle }: { nodes: ENode[]; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
-  if (nodes.length === 0) return null;
-  const next = nodes.flatMap((n) => n.children);
+function Down() { return <span className="eo-down" aria-hidden="true"><i /><b /></span>; }
+
+function TreeNode({ n, w, openId, onToggle }: { n: ENode; w: number; openId: number | null; onToggle: (id: number | null) => void }) {
   return (
-    <>
-      <tr>
-        {nodes.map((n) => (
-          <td key={n.user_id} valign="top" align="center" style={{ minWidth: w + 24, padding: "4px 8px" }}>
-            <Person n={n} w={w} open={n.user_id === openId} onToggle={onToggle} />
-          </td>
-        ))}
-      </tr>
-      {next.length > 0 && (
+    <div className="eo-node">
+      <Person n={n} w={w} open={n.user_id === openId} onToggle={onToggle} />
+      {n.children.length > 0 && (
         <>
-          <tr>
-            {nodes.map((n) => (
-              <td key={n.user_id} align="center" style={{ padding: 0 }}>
-                {n.children.length > 0 ? <img className="link_img" src={ARROW} alt="" style={{ width: Math.min(240, n.children.length * (w - 20)) }} /> : " "}
-              </td>
+          <Down />
+          <div className="eo-kids">
+            {n.children.map((c) => (
+              <div className="eo-kid" key={c.user_id}>
+                <Down />
+                <TreeNode n={c} w={Math.max(64, w - 16)} openId={openId} onToggle={onToggle} />
+              </div>
             ))}
-          </tr>
-          <Level nodes={next} w={Math.max(64, w - 20)} openId={openId} onToggle={onToggle} />
+          </div>
         </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -88,21 +95,13 @@ function Enrollment() {
   const left = rows.filter((r) => r.leg === "L").length;
   return (
     <Page title="Enrollment Team">
-      <h3 style={{ margin: "10px 0 4px" }}>Enrollment Genealogy — আপনার স্পনসর করা সব ডাউনলাইন</h3>
-      <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
+      <style>{TREE_CSS}</style>
+      <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
         {tree.data && (
-          <table width="100%" cellSpacing={0} cellPadding={2} style={{ minWidth: 640 }}>
-            <tbody>
-              <tr><th style={{ textAlign: "center", height: 40 }}> </th></tr>
-              <tr>
-                <th style={{ textAlign: "center", height: 60 }}>
-                  <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label="My enrollment tree" title="My enrollment tree" onClick={() => setOpenId(null)}><img className="link_img" src={ARROW_DOWN} alt="" style={{ width: 100 }} /></Button>
-                </th>
-              </tr>
-              <Level nodes={[tree.data]} w={160} openId={openId} onToggle={setOpenId} />
-            </tbody>
-          </table>
+          <div className="eo-tree">
+            <TreeNode n={tree.data} w={120} openId={openId} onToggle={setOpenId} />
+          </div>
         )}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
