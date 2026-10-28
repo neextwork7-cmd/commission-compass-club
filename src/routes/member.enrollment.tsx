@@ -99,39 +99,32 @@ function Enrollment() {
       <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
         {tree.data && (() => {
-          // Flatten: you on top, every downline user in one connected row below.
+          // You centered on screen; every downline user in one scrollable row below.
           const all: ENode[] = [];
           const walk = (n: ENode) => n.children.forEach((c) => { all.push(c); walk(c); });
           walk(tree.data);
-          const flat: ENode = { ...tree.data, children: all.map((c) => ({ ...c, children: [] })) };
           return (
-            <div className="eo-tree">
-              <TreeNode n={flat} w={110} openId={openId} onToggle={setOpenId} />
-            </div>
+            <>
+              <div className="eo-tree" style={{ minWidth: 0 }}>
+                <Person n={tree.data} w={110} open={openId === tree.data.user_id} onToggle={setOpenId} />
+                {all.length > 0 && <Down />}
+              </div>
+              {all.length > 0 && (
+                <div style={{ overflowX: "auto", padding: "0 0 8px" }} role="region" aria-label="Enrollment downline users" tabIndex={0}>
+                  <div className="eo-kids" style={{ minWidth: "100%", justifyContent: "center" }}>
+                    {all.map((c) => (
+                      <div className="eo-kid" key={c.user_id}>
+                        <Down />
+                        <Person n={c} w={110} open={openId === c.user_id} onToggle={setOpenId} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           );
         })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
-      </div>
-      <h3 style={{ margin: "14px 0 4px" }}>Enrollment Members</h3>
-      <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0" }} role="region" aria-label="Enrollment members" tabIndex={0}>
-        {rows.length === 0 && <span className="error">No enrollment member found.</span>}
-        {rows.map((r) => (
-          <span key={r.id} className={`lo-node${openId === -r.id ? " open" : ""}`} style={{ display: "inline-block", verticalAlign: "top", width: 110, margin: "0 6px", textAlign: "center", whiteSpace: "normal" }}>
-            <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${r.life_id}`} aria-expanded={openId === -r.id} onClick={() => setOpenId(openId === -r.id ? null : -r.id)}>
-              <img src="/member-kit/neel/blank.png" alt="" style={{ width: 90, opacity: Number(r.is_active) ? 0.9 : 0.6 }} />
-            </Button>
-            <br />
-            <a href="#" onClick={(e) => { e.preventDefault(); setOpenId(openId === -r.id ? null : -r.id); }}>User ID: {r.life_id}</a>
-            <span className="tooltip" role="tooltip" onClick={() => setOpenId(null)}>
-              <b>Full Name: <span>{r.full_name ?? ""}</span></b><br />
-              <b>Level: <span>{r.level} · {r.leg === "L" ? "Left" : "Right"}</span></b><br />
-              <b>Status: <span>{Number(r.is_active) ? "Active" : "Inactive"}</span></b><br />
-              <b>Binary: <span>{tk(r.binary_bill)}</span></b><br />
-              <b>Enrollment: <span>{tk(r.enrollment_bill)}</span></b><br />
-              <b>Paid: <span>{tk(r.paid)}</span></b><br />
-            </span>
-          </span>
-        ))}
       </div>
       <DataTable
         caption={<> Daily Matching — each matching pays only the higher of Binary / Enrollment bill (Left {left}, Right {rows.length - left}) </>}
