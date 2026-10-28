@@ -34,6 +34,7 @@
 - Fit the member portal through a single measured desktop canvas in the shared MemberShell; scale the whole canvas rather than adding mobile reflow rules, so every page preserves reference proportions.
 - Keep the member reference styling in the shared member stylesheet and give login its standalone reference form; this prevents decorative overrides from drifting across member pages without changing authentication or financial rules.
 - Tree member details and reset controls use reference-styled design-system buttons, preserving image dimensions while allowing keyboard activation and Escape dismissal.
+- Enrollment avatar details use portaled design-system popovers and shared tree profile data for pair cards, so horizontal scrolling cannot hide details or mislabel historical sale BV as current BV.
 - Member login captcha is generated and consumed once by the PHP service in private temporary storage; never expose answers or add client-only validation/bypass endpoints, because browser checks do not protect authentication.
 - Captcha images use GD when available and otherwise a stroked SVG (no text glyphs), because the live XAMPP host lacks GD.
 - New money features (transfer, recharge) ship disabled by default and treat a missing switch as off; only an admin setting enables them, so unapproved financial rules never go live automatically.

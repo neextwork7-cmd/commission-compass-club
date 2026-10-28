@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DataTable, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/member/enrollment")({
   head: () => ({ meta: [{ title: "Enrollment Team & Income — Life OS Member" }, { name: "description", content: "All members under your enrollment with Binary and Enrollment matching income." }, { property: "og:title", content: "Enrollment Team & Income — Life OS Member" }, { property: "og:description", content: "All members under your enrollment with Binary and Enrollment matching income." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -21,13 +22,23 @@ const money = (v?: number) => (Number(v) || 0).toFixed(2);
 /** One genealogy-style cell: photo button (tap opens the info box) + User ID link. */
 function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; onToggle: (id: number | null) => void }) {
   return (
-    <span className={`lo-node${open ? " open" : ""}`}>
-      <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${n.life_id}`} aria-expanded={open} aria-describedby={`enroll-info-${n.user_id}`} onClick={() => onToggle(open ? null : n.user_id)}>
+    <Popover open={open} onOpenChange={(next) => onToggle(next ? n.user_id : null)}>
+    <PopoverAnchor asChild><span className="lo-node">
+      <PopoverTrigger asChild><Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${n.life_id}`}>
         <img src="/member-kit/neel/blank.png" alt="" style={{ width: w, opacity: n.active ? 0.9 : 0.6 }} />
-      </Button>
+      </Button></PopoverTrigger>
       <br />
       <a href="#" onClick={(e) => { e.preventDefault(); onToggle(open ? null : n.user_id); }}>User ID: {n.life_id}</a>
-      <span className="tooltip" id={`enroll-info-${n.user_id}`} role="tooltip" onClick={() => onToggle(null)}>
+    </span></PopoverAnchor>
+    <ProfileInfo n={n} />
+    </Popover>
+  );
+}
+
+function ProfileInfo({ n }: { n: ENode }) {
+  return (
+      <PopoverContent aria-label={`Profile for ${n.life_id}`} side="bottom" collisionPadding={12} className="max-h-[min(440px,70vh)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto text-xs leading-5">
+        <b>User ID: <span>{n.life_id}</span></b><br />
         <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
         <b>Joined: <span>{n.created_at.slice(0, 10)}</span></b><br />
         <b>Purchased: <span>{money(n.purchased)}</span></b><br />
@@ -41,8 +52,7 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
         <b>Total Paired: <span>{n.pairs ?? 0}</span></b><br />
         <b>Matching Events: <span>{n.events ?? 0}</span></b><br />
         <b>Matching Earned: <span>{money(n.earned)}</span></b><br />
-      </span>
-    </span>
+      </PopoverContent>
   );
 }
 
@@ -67,10 +77,15 @@ function Down() { return <span className="eo-down" aria-hidden="true"><i /><b />
 type PUser = { id: number; life_id: string; name: string | null; amount?: number; bv?: number } | null;
 type Pair = { id: number; created_at: string; a: PUser; b: PUser; event_number: number; selected_type: string; enrollment_bill: string; binary_bill: string; actual_payout: string; payout_status: string };
 
-function PUserView({ u }: { u: PUser }) {
+function PUserView({ u, node }: { u: PUser; node?: ENode }) {
   return (
     <div style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
-      <img src="/member-kit/neel/blank.png" alt="" style={{ width: 64, borderRadius: "50%" }} />
+      <Popover>
+        <PopoverTrigger asChild><Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Pair profile for ${u?.life_id ?? "unknown member"}`} disabled={!u}>
+          <img src="/member-kit/neel/blank.png" alt="" style={{ width: 64, borderRadius: "50%" }} />
+        </Button></PopoverTrigger>
+        {node ? <ProfileInfo n={node} /> : <PopoverContent aria-label={`Profile for ${u?.life_id}`} className="text-xs"><b>{u?.name ?? u?.life_id}</b><p>Current profile information unavailable.</p></PopoverContent>}
+      </Popover>
       <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u?.name || "—"}</div>
       <div style={{ fontSize: 12, opacity: 0.8 }}>{u?.life_id ?? "?"}</div>
       <div style={{ fontSize: 12, fontWeight: 600 }}>{u ? `৳${money(u.amount)}` : ""}</div>
@@ -79,7 +94,7 @@ function PUserView({ u }: { u: PUser }) {
   );
 }
 
-function PairCards({ data, loading }: { data: { day: string | null; pairs: Pair[] } | undefined; loading: boolean }) {
+function PairCards({ data, loading, nodes }: { data: { day: string | null; pairs: Pair[] } | undefined; loading: boolean; nodes: Map<number, ENode> }) {
   return (
     <div style={{ margin: "12px 0" }}>
       <h4 style={{ margin: "0 0 8px" }}>Enrollment Pairs — Last Day {data?.day ? `(${data.day})` : ""}</h4>
@@ -89,9 +104,9 @@ function PairCards({ data, loading }: { data: { day: string | null; pairs: Pair[
         {data?.pairs?.map((p) => (
           <div key={p.id} style={{ border: "1px solid #ccc", borderRadius: 10, padding: 10, background: "rgba(255,255,255,0.9)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <PUserView u={p.a} />
+              <PUserView u={p.a} node={p.a ? nodes.get(p.a.id) : undefined} />
               <div style={{ fontWeight: 800, fontSize: 18 }} aria-label="paired with">⇄</div>
-              <PUserView u={p.b} />
+              <PUserView u={p.b} node={p.b ? nodes.get(p.b.id) : undefined} />
             </div>
             <div style={{ borderTop: "1px dashed #bbb", marginTop: 8, paddingTop: 6, fontSize: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
               <span>Event #{p.event_number}</span><span style={{ textAlign: "right" }}>{p.created_at?.slice(11, 16)}</span>
@@ -111,15 +126,9 @@ function Enrollment() {
   const tree = useMember<ENode | null>("enroll-tree", "/tree/enrollment/full");
   const pairs = useMember<{ day: string | null; pairs: Pair[] }>("enroll-pairs", "/enrollment/pairs");
   const [openId, setOpenId] = useState<number | null>(null);
-  // Tapping anywhere outside a member closes the open info box (touch screens have no hover-out).
-  useEffect(() => {
-    if (openId === null) return;
-    const close = (e: PointerEvent) => { if (!(e.target as Element | null)?.closest?.(".lo-node")) setOpenId(null); };
-    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenId(null); };
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", escape);
-    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
-  }, [openId]);
+  const nodes = new Map<number, ENode>();
+  const collect = (n: ENode) => { nodes.set(n.user_id, n); n.children.forEach(collect); };
+  if (tree.data) collect(tree.data);
   const rows = q.data?.members ?? [];
   const daily = q.data?.daily ?? [];
   const left = rows.filter((r) => r.leg === "L").length;
@@ -156,7 +165,7 @@ function Enrollment() {
         })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
-      <PairCards data={pairs.data} loading={pairs.isLoading} />
+      <PairCards data={pairs.data} loading={pairs.isLoading} nodes={nodes} />
       <DataTable
         caption={<> Daily Matching — each matching pays only the higher of Binary / Enrollment bill (Left {left}, Right {rows.length - left}) </>}
         head={["Date", "Binary Bill", "Enrollment Bill", "Paid (one bill per matching)", "Events"]}
