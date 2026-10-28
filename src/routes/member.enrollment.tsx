@@ -3,6 +3,7 @@ import { useState } from "react";
 import { DataTable, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import "@/enrollment-popover.css";
 
 export const Route = createFileRoute("/member/enrollment")({
   head: () => ({ meta: [{ title: "Enrollment Team & Income — Life OS Member" }, { name: "description", content: "All members under your enrollment with Binary and Enrollment matching income." }, { property: "og:title", content: "Enrollment Team & Income — Life OS Member" }, { property: "og:description", content: "All members under your enrollment with Binary and Enrollment matching income." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -37,7 +38,7 @@ function Person({ n, w, open, onToggle }: { n: ENode; w: number; open: boolean; 
 
 function ProfileInfo({ n }: { n: ENode }) {
   return (
-      <PopoverContent aria-label={`Profile for ${n.life_id}`} side="bottom" collisionPadding={12} className="max-h-[min(440px,70vh)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto text-xs leading-5">
+      <PopoverContent aria-label={`Profile for ${n.life_id}`} side="bottom" collisionPadding={12} className="enrollment-profile-popover max-h-[min(440px,70vh)] w-80 max-w-[calc(100vw-24px)] overflow-y-auto text-xs leading-5">
         <b>User ID: <span>{n.life_id}</span></b><br />
         <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
         <b>Joined: <span>{n.created_at.slice(0, 10)}</span></b><br />
@@ -84,7 +85,7 @@ function PUserView({ u, node }: { u: PUser; node: ENode | undefined }) {
         <PopoverTrigger asChild><Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Pair profile for ${u?.life_id ?? "unknown member"}`} disabled={!u}>
           <img src="/member-kit/neel/blank.png" alt="" style={{ width: 64, borderRadius: "50%" }} />
         </Button></PopoverTrigger>
-        {node ? <ProfileInfo n={node} /> : <PopoverContent aria-label={`Profile for ${u?.life_id}`} className="text-xs"><b>{u?.name ?? u?.life_id}</b><p>Current profile information unavailable.</p></PopoverContent>}
+        {node ? <ProfileInfo n={node} /> : <PopoverContent aria-label={`Profile for ${u?.life_id}`} className="enrollment-profile-popover text-xs"><b>{u?.name ?? u?.life_id}</b><p>Current profile information unavailable.</p></PopoverContent>}
       </Popover>
       <div style={{ fontWeight: 700, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u?.name || "—"}</div>
       <div style={{ fontSize: 12, opacity: 0.8 }}>{u?.life_id ?? "?"}</div>

@@ -1,0 +1,11 @@
+.enrollment-profile-popover {
+  --enrollment-profile-surface: var(--reference-tone-3);
+  --enrollment-profile-text: var(--reference-tone-5);
+  --enrollment-profile-border: var(--reference-tone-4);
+  z-index: 2000;
+  background: var(--enrollment-profile-surface);
+  color: var(--enrollment-profile-text);
+  border-color: var(--enrollment-profile-border);
+  text-align: left;
+  font-family: Tahoma, sans-serif;
+}
