@@ -98,11 +98,18 @@ function Enrollment() {
       <style>{TREE_CSS}</style>
       <div style={{ overflowX: "auto", whiteSpace: "nowrap", padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
-        {tree.data && (
-          <div className="eo-tree">
-            <TreeNode n={tree.data} w={120} openId={openId} onToggle={setOpenId} />
-          </div>
-        )}
+        {tree.data && (() => {
+          // Flatten: you on top, every downline user in one connected row below.
+          const all: ENode[] = [];
+          const walk = (n: ENode) => n.children.forEach((c) => { all.push(c); walk(c); });
+          walk(tree.data);
+          const flat: ENode = { ...tree.data, children: all.map((c) => ({ ...c, children: [] })) };
+          return (
+            <div className="eo-tree">
+              <TreeNode n={flat} w={110} openId={openId} onToggle={setOpenId} />
+            </div>
+          );
+        })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
       <h3 style={{ margin: "14px 0 4px" }}>Enrollment Members</h3>
