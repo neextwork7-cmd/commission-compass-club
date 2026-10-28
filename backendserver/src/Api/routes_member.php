@@ -279,6 +279,66 @@ $router->get('/api/member/tree/enrollment', function () {
     Http::ok(['directs' => $directs, 'legs' => $legs]);
 });
 
+// Full enrollment (sponsor) downline as a nested tree for the horizontal genealogy view.
+// Depth is capped at 6 levels; each node carries its own direct count and subtree size.
+$router->get('/api/member/tree/enrollment/full', function () {
+    $u = Auth::member();
+    $uid = (int) $u['id'];
+    // Load the whole sponsor downline level by level (batched IN lists stay portable).
+    $kids = [];
+    $frontier = [$uid];
+    $guard = 0;
+    while ($frontier && $guard++ < 60) {
+        $next = [];
+        foreach (array_chunk($frontier, 500) as $chunk) {
+            $marks = implode(',', array_fill(0, count($chunk), '?'));
+            foreach (DB::all("SELECT user_id, sponsor_id FROM lo_tree WHERE sponsor_id IN ($marks)", $chunk) as $r) {
+                $pid = (int) $r['sponsor_id'];
+                $cid = (int) $r['user_id'];
+                $kids[$pid][] = $cid;
+                $next[] = $cid;
+            }
+        }
+        $frontier = array_values(array_unique($next));
+        if (count($kids) > 5000) break;
+    }
+    // Subtree sizes, bottom-up without recursion.
+    $size = [];
+    $compute = function (int $id) use (&$compute, &$size, $kids): int {
+        if (isset($size[$id])) return $size[$id];
+        $total = 1;
+        foreach ($kids[$id] ?? [] as $c) $total += $compute($c);
+        return $size[$id] = $total;
+    };
+    $compute($uid);
+    $build = function (int $id, int $depth) use (&$build, $kids, $size): ?array {
+        if ($depth > 6) return null;
+        $n = DB::one(
+            "SELECT u.life_id, u.created_at, t.is_active,
+                    (SELECT p.name FROM user_profiles p WHERE p.user_id = u.id ORDER BY p.id LIMIT 1) AS full_name,
+                    (SELECT COALESCE(SUM(a.fee), 0) FROM lo_activations a WHERE a.user_id = u.id AND a.payment_status = 'SUCCESS') AS purchased
+             FROM lo_tree t JOIN users u ON u.id = t.user_id WHERE t.user_id = ?", [$id]);
+        if (!$n) return null;
+        $children = [];
+        foreach ($kids[$id] ?? [] as $c) {
+            $node = $build($c, $depth + 1);
+            if ($node !== null) $children[] = $node;
+        }
+        return [
+            'user_id' => $id,
+            'life_id' => $n['life_id'],
+            'full_name' => $n['full_name'],
+            'created_at' => $n['created_at'],
+            'active' => (bool) $n['is_active'],
+            'purchased' => (float) $n['purchased'],
+            'directs' => count($kids[$id] ?? []),
+            'team_total' => ($size[$id] ?? 1) - 1,
+            'children' => $children,
+        ];
+    };
+    Http::ok($build($uid, 0));
+});
+
 // ---- Activation (payment-verified only; gateway callback calls /api/admin/activations/{id}/confirm) ----
 $router->post('/api/member/activations', function () {
     $u = Auth::member();
