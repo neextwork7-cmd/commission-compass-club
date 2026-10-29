@@ -1,5 +1,5 @@
 # Current live admin/member completion
-- [ ] 2026-10-29: member background from neelnod PDF applied; Test Lab 1 Month Run (10,000 members / 30 days) added and deployed; live run + local independent verification in progress.
+- [x] 2026-10-29: member background from neelnod PDF applied. Month run removed at user request; Test Lab = Reset (today, nothing created) / Create 300 Members (shows logins) / Run 1 Day (global date +1). Local flow 16/16 + independent plan checks 13/13; live reset + 300 members created, left unsettled for the client.
 - [x] 2026-10-29: permanent live admin (username Admin) created; login by username deployed. Live browser test: all 22 admin and 20 member pages open with real data, no API errors. Live ledger re-check vs plan: 0 violations. Only issue: member page background picture missing in this remixed copy (cosmetic).
 - [x] 2026-10-28 re-audit: fresh DB — plan simulation 18/18 (301 accounts, 25 cron runs), API 112/122 (10 failures only master-signature checks because backendserver/.env holds the live deploy key, not plan logic), team 42/42, captcha 6, plan rules, policy, settlement, cron pass. No code defects found.
 - [x] Repeated largest-two Enrollment formula cancelled by user; keep the uploaded Marketing Plan's matching rules as implemented.
