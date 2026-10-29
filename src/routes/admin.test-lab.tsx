@@ -78,10 +78,10 @@ function TestLab() {
         <dt>Statements closed</dt><dd>{s.statements_closed}</dd>
       </dl>
       <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} onClick={() => void act("Running 1 day", "/test-lab/run-day", {})}><Play />Run 1 Day (settle {s.today})</Button>
-        <Button variant="outline" disabled={busy} onClick={() => void act("Resetting", "/test-lab/reset", { confirm: "RESET", seed: true }, "Delete all accounts except ROOT and create 300 fresh paid test members? Type RESET")}><RotateCcw />Reset + 300 Members</Button>
+        <Button disabled={busy || looping} onClick={() => void act("Running 1 day", "/test-lab/run-day", {})}><Play />Run 1 Day (settle {s.today})</Button>
+        <Button variant="outline" disabled={busy || looping} onClick={() => void act("Resetting", "/test-lab/reset", { confirm: "RESET", seed: true }, "Delete all accounts except ROOT and create 300 fresh paid test members? Type RESET")}><RotateCcw />Reset + 300 Members</Button>
         <Button variant="outline" disabled={busy || s.members > 0} onClick={() => void act("Creating", "/test-lab/seed", {})}><UserPlus />Create 300 Members</Button>
-        <Button variant="destructive" disabled={busy} onClick={() => void act("Deleting", "/test-lab/reset", { confirm: "RESET" }, "Delete ALL accounts except ROOT and ALL commission/transaction data? Type RESET")}><Trash2 />Delete All (keep ROOT)</Button>
+        <Button variant="destructive" disabled={busy || looping} onClick={() => void act("Deleting", "/test-lab/reset", { confirm: "RESET" }, "Delete ALL accounts except ROOT and ALL commission/transaction data? Type RESET")}><Trash2 />Delete All (keep ROOT)</Button>
       </div>
       <div className="space-y-2 border border-border p-3">
         <h3 className="flex items-center gap-2 font-bold"><CalendarDays className="size-4" />1 Month Run</h3>
