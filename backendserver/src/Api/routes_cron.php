@@ -46,6 +46,14 @@ $router->post('/api/admin/test-lab/reset', function () {
     $out = \LifeOS\TestLab::reset();
     Http::ok($out + ['status' => \LifeOS\TestLab::status()]);
 });
+$router->get('/api/admin/test-lab/progress', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::getProgress());
+});
+$router->post('/api/admin/test-lab/add-sales', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::addSales(300) + ['status' => \LifeOS\TestLab::status()]);
+});
 $router->get('/api/admin/test-lab/logins', function () {
     Auth::admin();
     Http::ok(['password' => 'test1234', 'members' => \LifeOS\TestLab::logins()]);
