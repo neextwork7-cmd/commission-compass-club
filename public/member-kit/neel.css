@@ -13,11 +13,11 @@
   --lo-rule: #AAA;
   --lo-error: #FF0000;
   --lo-success: #006600;
-  --lo-reference-background: url('/__l5e/assets-v1/ae43fcdc-af97-4169-b921-d2900789c2f6/reference-member-repeat.png');
+  --lo-reference-background: url('/member-kit/member-bg-tile.jpg');
 }
 
 /* ---------- Page background + canvas ---------- */
-.neel-viewport { background: var(--lo-reference-background) repeat #26968f; min-height: 100vh; overflow-x: hidden; padding: 0 0 1px; }
+.neel-viewport { background: var(--lo-reference-background) repeat #10b0d7; min-height: 100vh; overflow-x: hidden; padding: 0 0 1px; }
 .neel { width: 1000px; margin: 5px auto 0; box-shadow: 0 3px 12px #111; background: #fff; color: #000; font-family: Tahoma, Geneva, sans-serif; font-size: 12px; line-height: 1.3em; text-align: left; }
 
 /* Undo the app-wide reset inside the reference canvas so native table/form metrics match. */
