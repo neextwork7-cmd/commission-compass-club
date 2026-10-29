@@ -15,6 +15,9 @@ final class TestLab
         'lo_daily_caps', 'lo_statements', 'lo_ledger', 'lo_allocations', 'lo_pool_movements', 'lo_sales', 'lo_activations',
         'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges'];
 
+    /** Browser-generated id of the action being run, so the progress bar never shows another action's record. */
+    public static string $runId = '';
+
     public static function enabled(): bool { return Config::get('test_lab_enabled', false) === true; }
 
     private static function guard(): void
@@ -217,10 +220,10 @@ final class TestLab
     }
 
     /** Progress of the running Test Lab action, written outside transactions so other requests can read it. */
-    private static function progress(string $action, int $done, int $total): void
+    private static function progress(string $action, int $done, int $total, array $extra = []): void
     {
         DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_progress',?) ON DUPLICATE KEY UPDATE v=VALUES(v)",
-            [json_encode(['action' => $action, 'done' => $done, 'total' => max(1, $total), 'at' => time()])]);
+            [json_encode(['action' => $action, 'id' => substr(self::$runId, 0, 40), 'done' => $done, 'total' => max(1, $total)] + $extra)]);
     }
 
     public static function getProgress(): ?array
@@ -231,38 +234,53 @@ final class TestLab
         return $p;
     }
 
-    /** Runs the real cron settlement for the simulated day, then moves the software to the next day. */
-    public static function runDay(): array
+    /**
+     * Runs the real cron settlement for the software date in slices of about $budget seconds (stays under the
+     * host's 100-second proxy limit). While activations remain it returns partial=true without changing the date;
+     * the call that finishes the day closes it at midnight and moves the whole software to the next day.
+     */
+    public static function runDay(float $budget = 40.0): array
     {
         self::guard();
-        return self::exclusive(function () {
+        @set_time_limit(300);
+        return self::exclusive(function () use ($budget) {
+            $t0 = microtime(true);
             $day = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
             self::setClock($day);
-            $total = ['processed' => 0, 'statements_closed' => 0, 'failed' => 0];
-            $waiting = (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE payment_status='SUCCESS' AND processed=0");
-            self::progress('run', 0, $waiting + 1);
-            for ($i = 0; $i < 2000; $i++) {
-                // Small batches so the progress bar moves; the settlement engine and lock are unchanged.
+            $waitingSql = "SELECT COUNT(*) FROM lo_activations WHERE payment_status='SUCCESS' AND processed=0";
+            $prev = self::getProgress();
+            $cont = self::$runId !== '' && $prev && $prev['action'] === 'run' && ($prev['id'] ?? '') === substr(self::$runId, 0, 40);
+            $total = $cont ? (int) $prev['total'] : (int) DB::val($waitingSql) + 1;
+            $acc = ['processed' => $cont ? (int) ($prev['p'] ?? 0) : 0, 'statements_closed' => $cont ? (int) ($prev['s'] ?? 0) : 0, 'failed' => $cont ? (int) ($prev['f'] ?? 0) : 0];
+            $mark = fn () => self::progress('run', max(0, $total - 1 - (int) DB::val($waitingSql)), $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
+            $mark();
+            $thisCall = 0;
+            while (microtime(true) - $t0 < $budget) {
+                // Small batches so the progress bar moves; the settlement engine and its lock are unchanged.
                 $r = Settlement::run(true, 25, true);
-                self::progress('run', min($waiting, $total['processed'] + (int) ($r['processed'] ?? 0)), $waiting + 1);
-                foreach ($total as $k => $_) $total[$k] += (int) ($r[$k] ?? 0);
                 if (($r['status'] ?? '') === 'busy') throw new HttpError('Settlement already running', 409);
+                foreach ($acc as $k => $_) $acc[$k] += (int) ($r[$k] ?? 0);
+                $thisCall += (int) ($r['processed'] ?? 0);
+                $mark();
                 if (($r['eligible_activations'] ?? 0) === 0 && ($r['unfinished_days'] ?? 0) === 0) break;
                 if (($r['processed'] ?? 0) === 0 && ($r['statements_closed'] ?? 0) === 0) break;
             }
+            $left = (int) DB::val($waitingSql);
+            // Keep going on the next call while work remains and this slice made progress.
+            if ($left > 0 && $thisCall > 0) return ['partial' => true, 'settled_date' => $day, 'waiting' => $left] + $acc;
             $next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
             self::setClock($next);
             // Midnight close of the finished day happens on the new date.
             $close = Settlement::run(true, 1000, true);
-            $total['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
-            $total['failed'] += (int) ($close['failed'] ?? 0);
-            self::progress('run', $waiting + 1, $waiting + 1);
+            $acc['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
+            $acc['failed'] += (int) ($close['failed'] ?? 0);
+            self::progress('run', $total, $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
             $days = (int) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_days'") ?: 0) + 1;
-            $record = ['settled_date' => $day, 'next_date' => $next] + $total;
+            $record = ['settled_date' => $day, 'next_date' => $next] + $acc;
             DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [(string) $days]);
             DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_last',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode($record)]);
-            DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $total])]);
-            return $record;
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $acc])]);
+            return $record + ['partial' => false];
         });
     }
 }
