@@ -252,7 +252,9 @@ final class TestLab
             $cont = self::$runId !== '' && $prev && $prev['action'] === 'run' && ($prev['id'] ?? '') === substr(self::$runId, 0, 40);
             $total = $cont ? (int) $prev['total'] : (int) DB::val($waitingSql) + 1;
             $acc = ['processed' => $cont ? (int) ($prev['p'] ?? 0) : 0, 'statements_closed' => $cont ? (int) ($prev['s'] ?? 0) : 0, 'failed' => $cont ? (int) ($prev['f'] ?? 0) : 0];
-            $mark = fn () => self::progress('run', max(0, $total - 1 - (int) DB::val($waitingSql)), $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
+            $mark = function () use (&$acc, $total, $waitingSql) {
+                self::progress('run', max(0, $total - 1 - (int) DB::val($waitingSql)), $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
+            };
             $mark();
             $thisCall = 0;
             while (microtime(true) - $t0 < $budget) {
