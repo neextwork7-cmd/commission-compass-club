@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { KeyRound, Play, RefreshCw, RotateCcw, UserPlus } from "lucide-react";
+import { KeyRound, Play, RefreshCw, RotateCcw, ShoppingCart, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
 import { adminApi } from "@/lib/admin-api";
+import { useTestLabAction } from "@/components/test-lab-actions";
 import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/admin/test-lab")({
@@ -18,7 +19,8 @@ const tk = (n: number) => `৳${n.toLocaleString("en-IN", { maximumFractionDigit
 
 function TestLab() {
   const q = useAdmin<Status>("test-lab", "/test-lab");
-  const [busy, setBusy] = useState(false);
+  const { run, running, bar } = useTestLabAction();
+  const busy = running !== null;
   const [msg, setMsg] = useState<string | null>(null);
   const [logins, setLogins] = useState<Login[] | null>(null);
   const s = q.data;
@@ -29,9 +31,9 @@ function TestLab() {
   };
 
   const runDay = async () => {
-    setBusy(true); setMsg("Running 1 day settlement…");
+    setMsg(null);
     try {
-      const r = await adminApi<{ settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number }>("/test-lab/run-day", { method: "POST", body: {} });
+      const r = await run("run", () => adminApi<{ settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number }>("/test-lab/run-day", { method: "POST", body: {} }));
       setMsg(`Settled ${r.settled_date}: ${r.processed} activations, ${r.statements_closed} statements closed, ${r.failed} failed. Software date is now ${r.next_date}.`);
       await q.refetch();
       if (logins) await loadLogins();
@@ -41,9 +43,9 @@ function TestLab() {
 
   const reset = async () => {
     if (window.prompt("Delete ALL accounts except ROOT and ALL commission/transaction data, and set the software date back to today? Type RESET") !== "RESET") { setMsg("Cancelled — type RESET to confirm."); return; }
-    setBusy(true); setMsg("Resetting…");
+    setMsg(null);
     try {
-      const r = await adminApi<{ removed_accounts: number }>("/test-lab/reset", { method: "POST", body: { confirm: "RESET" } });
+      const r = await run("reset", () => adminApi<{ removed_accounts: number }>("/test-lab/reset", { method: "POST", body: { confirm: "RESET" } }));
       setLogins(null);
       setMsg(`Removed ${r.removed_accounts} accounts. ROOT kept, all commission data cleared, software date set to today. Press Create 300 Members next.`);
       await q.refetch();
@@ -52,9 +54,9 @@ function TestLab() {
   };
 
   const create = async () => {
-    setBusy(true); setMsg("Creating 300 paid test members…");
+    setMsg(null);
     try {
-      const r = await adminApi<{ created: number; usernames: string; password: string; logins: Login[] }>("/test-lab/seed", { method: "POST", body: {} });
+      const r = await run("create", () => adminApi<{ created: number; usernames: string; password: string; logins: Login[] }>("/test-lab/seed", { method: "POST", body: {} }));
       setLogins(r.logins);
       setMsg(`${r.created} paid test members created (usernames ${r.usernames}, password ${r.password}). Nothing settled yet — press Run 1 Day.`);
       await q.refetch();
@@ -62,6 +64,15 @@ function TestLab() {
     finally { setBusy(false); }
   };
 
+  const addSales = async () => {
+    setMsg(null);
+    try {
+      const r = await run("sales", () => adminApi<{ added: number; from: string; to: string; date: string; password: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: {} }));
+      setMsg(`${r.added} new sales added on ${r.date} (members ${r.from} … ${r.to}, password ${r.password}). Waiting for settlement: ${r.waiting}. Press Run 1 Day to settle.`);
+      await q.refetch();
+      if (logins) await loadLogins();
+    } catch (e) { setMsg((e as Error).message); }
+  };
   const total = s ? Object.values(s.totals).reduce((a, b) => a + b, 0) : 0;
   return <Page title="Test Lab (1-Day Run)">
     <Msg text={q.error ? (q.error as Error).message : msg} />
@@ -79,10 +90,12 @@ function TestLab() {
       <div className="flex flex-wrap gap-2">
         <Button disabled={busy || s.members === 0} onClick={() => void runDay()}><Play />Run 1 Day (settle {s.today})</Button>
         <Button variant="outline" disabled={busy || s.members > 0} onClick={() => void create()}><UserPlus />Create 300 Members</Button>
+        <Button variant="outline" disabled={busy || s.members === 0} onClick={() => void addSales()}><ShoppingCart />Add 1 Day Sales (300)</Button>
         <Button variant="destructive" disabled={busy} onClick={() => void reset()}><RotateCcw />Reset (keep ROOT, date → today)</Button>
         <Button variant="outline" disabled={busy || s.members === 0} onClick={() => void loadLogins()}><KeyRound />Show Member Logins</Button>
       </div>
-      <p className="text-sm">Steps: 1) Reset → everything cleared, date = today, nothing settled. 2) Create 300 Members → paid members, no commission yet. 3) Run 1 Day → the real commission cron settles the software date, then the whole software moves to the next day. Press again for every next day.</p>
+      {bar}
+      <p className="text-sm">Steps: 1) Reset → everything cleared, date = today, nothing settled. 2) Create 300 Members → paid members, no commission yet. 3) Run 1 Day → the real commission cron settles the software date, then the whole software moves to the next day. 4) Add 1 Day Sales → 300 new paid sales on the new date (existing data kept, nothing settled), then Run 1 Day again.</p>
       {s.last_day && <p>Last run: settled {s.last_day.settled_date} → {s.last_day.processed} activations, {s.last_day.statements_closed} statements, {s.last_day.failed} failed. Next: {s.last_day.next_date}.</p>}
       <table className="w-full max-w-lg border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Commission</th><th className="p-1 text-right">Paid</th></tr></thead>
         <tbody>{Object.entries(s.totals).map(([k, v]) => <tr key={k} className="border-t border-border"><td className="p-1">{k}</td><td className="p-1 text-right">{tk(v)}</td></tr>)}
