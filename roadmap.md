@@ -1,4 +1,5 @@
 # Current live admin/member completion
+- [x] 2026-10-29: permanent live admin (username Admin) created; login by username deployed. Live browser test: all 22 admin and 20 member pages open with real data, no API errors. Live ledger re-check vs plan: 0 violations. Only issue: member page background picture missing in this remixed copy (cosmetic).
 - [x] 2026-10-28 re-audit: fresh DB — plan simulation 18/18 (301 accounts, 25 cron runs), API 112/122 (10 failures only master-signature checks because backendserver/.env holds the live deploy key, not plan logic), team 42/42, captcha 6, plan rules, policy, settlement, cron pass. No code defects found.
 - [x] Repeated largest-two Enrollment formula cancelled by user; keep the uploaded Marketing Plan's matching rules as implemented.
 - [x] 2026-10-28 full plan simulation: ROOT + 300 accounts via real API, half settled by bin/settle.php cron runs; independent plan model matches every account's cashback/referral/generation/matching (incl. ৳5,000 daily cap). 122+42+11+17+6 suite checks pass. Data kept in backendserver/tests/fixtures/plan_simulation_300.*.

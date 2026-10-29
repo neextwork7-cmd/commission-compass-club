@@ -60,7 +60,7 @@ function AdminLogin() {
       <div className="admin-login-box">
         <h1 className="admin-login-title">ADMIN LOGIN</h1>
         <form onSubmit={submit}>
-          <input className="admin-login-input" type="email" name="email" placeholder="Account Login User ID" required autoComplete="username" />
+          <input className="admin-login-input" type="text" name="email" placeholder="Account Login User ID" required autoComplete="username" autoCapitalize="none" />
           <input className="admin-login-input" type="password" name="password" placeholder="Account Login Password" required autoComplete="current-password" />
           <input className="admin-login-input" type="text" name="captcha" placeholder="Login Captcha Code" required maxLength={5} autoComplete="off" />
           <button type="button" className="admin-login-captcha" title="Click for a new code" onClick={() => setCode(makeCode())}>
