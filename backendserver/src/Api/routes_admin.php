@@ -11,7 +11,9 @@ use LifeOS\Engine\Commission;
 
 $router->post('/api/admin/login', function () {
     $b = Http::body();
-    $a = DB::one('SELECT * FROM admin_users WHERE email = ?', [$b['email'] ?? '']);
+    // Admins sign in with their email or their username (admin_users.name).
+    $login = trim((string) ($b['email'] ?? ''));
+    $a = $login === '' ? null : DB::one('SELECT * FROM admin_users WHERE email = ? OR name = ? ORDER BY (email = ?) DESC, id LIMIT 1', [$login, $login, $login]);
     if (!$a || !password_verify((string) ($b['password'] ?? ''), (string) ($a['password'] ?? ''))) {
         throw new HttpError('Invalid credentials', 401);
     }
