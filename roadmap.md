@@ -1,6 +1,6 @@
 # Current live admin/member completion
-- [ ] Admin Cron/Test Lab: "Add 1 Day Sales" button (300 new paid, unsettled sales on current software date, keeps existing data); progress bar + percent for every Test Lab action.
-- [ ] 4-day live test with rank + Binary/Enrollment matching split on member dashboard, admin dashboard, cron page.
+- [x] Admin Cron/Test Lab: "Add 1 Day Sales" button (300 new paid, unsettled sales on current software date, keeps existing data); progress bar + percent for every Test Lab action.
+- [x] 4-day live test (live = local, 16/16 plan checks; fixed live daily cap using real date instead of software date) with rank + Binary/Enrollment matching split on member dashboard, admin dashboard, cron page.
 - [x] 2026-10-29: member background from neelnod PDF applied. Month run removed at user request; Test Lab = Reset (today, nothing created) / Create 300 Members (shows logins) / Run 1 Day (global date +1). Local flow 16/16 + independent plan checks 13/13; live reset + 300 members created, left unsettled for the client.
 - [x] 2026-10-29: permanent live admin (username Admin) created; login by username deployed. Live browser test: all 22 admin and 20 member pages open with real data, no API errors. Live ledger re-check vs plan: 0 violations. Only issue: member page background picture missing in this remixed copy (cosmetic).
 - [x] 2026-10-28 re-audit: fresh DB — plan simulation 18/18 (301 accounts, 25 cron runs), API 112/122 (10 failures only master-signature checks because backendserver/.env holds the live deploy key, not plan logic), team 42/42, captcha 6, plan rules, policy, settlement, cron pass. No code defects found.
