@@ -50,8 +50,7 @@ $router->post('/api/admin/test-lab/month/start', function () {
     Auth::admin();
     $b = Http::body();
     if (($b['confirm'] ?? '') !== 'RESET') throw new HttpError('Type RESET to confirm', 422);
-    $out = \LifeOS\TestLab::reset();
-    $out['job'] = \LifeOS\TestLab::startJob((int) ($b['members'] ?? 10000), (int) ($b['days'] ?? 30));
+    $out = \LifeOS\TestLab::startFresh((int) ($b['members'] ?? 10000), (int) ($b['days'] ?? 30));
     Http::ok($out + ['status' => \LifeOS\TestLab::status()]);
 });
 $router->post('/api/admin/test-lab/month/step', function () {

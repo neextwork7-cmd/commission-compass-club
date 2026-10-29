@@ -185,6 +185,13 @@ final class TestLab
         else DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_job',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode($j)]);
     }
 
+    /** Reset + start in one locked action (GET_LOCK is re-entrant per connection). */
+    public static function startFresh(int $members, int $days): array
+    {
+        self::guard();
+        return self::exclusive(fn () => self::reset() + ['job' => self::startJob($members, $days)]);
+    }
+
     /** Starts a fresh multi-day run: requires an empty lab (only ROOT). */
     public static function startJob(int $members, int $days, int $seed = 11): array
     {
