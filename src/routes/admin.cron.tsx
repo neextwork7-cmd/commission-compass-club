@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, RefreshCw } from "lucide-react";
+import { Copy, Play, RefreshCw, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
-import { ADMIN_API_BASE } from "@/lib/admin-api";
+import { ADMIN_API_BASE, adminApi } from "@/lib/admin-api";
+import { useTestLabAction } from "@/components/test-lab-actions";
 import { bdt } from "@/lib/member-api";
 import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
@@ -17,6 +18,24 @@ function CronSetup() {
   const q = useAdmin<Status>("cron", "/cron");
   const [message, setMessage] = useState<string | null>(null);
   const data = q.data;
+  const lab = useTestLabAction();
+  // Test Lab shortcuts: add one day of new sales, then settle that day with the real cron engine.
+  const addSales = async () => {
+    setMessage(null);
+    try {
+      const r = await lab.run("sales", () => adminApi<{ added: number; from: string; to: string; date: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: {} }));
+      setMessage(`${r.added} new sales added on ${r.date} (${r.from} … ${r.to}, password test1234). ${r.waiting} waiting — press Run 1 Day Settle.`);
+      await q.refetch();
+    } catch (e) { setMessage((e as Error).message); }
+  };
+  const runDay = async () => {
+    setMessage(null);
+    try {
+      const r = await lab.run("run", () => adminApi<{ settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number }>("/test-lab/run-day", { method: "POST", body: {} }));
+      setMessage(`Settled ${r.settled_date}: ${r.processed} activations, ${r.statements_closed} statements closed, ${r.failed} failed. Software date is now ${r.next_date}.`);
+      await q.refetch();
+    } catch (e) { setMessage((e as Error).message); }
+  };
   const cronUrl = data?.url ?? `${ADMIN_API_BASE}/public/cron/settle`;
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); setMessage("Copied."); }
@@ -32,6 +51,15 @@ function CronSetup() {
         <dt>Last URL invocation</dt><dd>{data.last_run ? `${data.last_run.at} — ${data.last_run.result.status}` : "No verified invocation"}</dd>
         <dt>Host schedule</dt><dd>Installation must be confirmed in cPanel.</dd>
       </dl>
+      <div className="space-y-2 border border-border p-3">
+        <h3 className="font-bold">Test Lab — 1 Day Sales &amp; Settlement (software date {data.software_date})</h3>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={lab.running !== null} onClick={() => void addSales()}><ShoppingCart />Add 1 Day Sales (300)</Button>
+          <Button disabled={lab.running !== null} onClick={() => void runDay()}><Play />Run 1 Day Settle</Button>
+        </div>
+        {lab.bar}
+        <p className="text-sm">Add 1 Day Sales creates 300 new paid members and their ৳1,000 activation transactions on the software date, keeping all existing data; nothing is settled until Run 1 Day Settle.</p>
+      </div>
       {data.matching_total && <>
         <h3>Matching by Type (cron settlement)</h3>
         <table className="w-full max-w-2xl border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Matching Type</th><th className="p-1 text-right">Previous day</th><th className="p-1 text-right">Today ({data.software_date})</th><th className="p-1 text-right">All time</th><th className="p-1 text-right">Events (paid / flushed)</th></tr></thead>
