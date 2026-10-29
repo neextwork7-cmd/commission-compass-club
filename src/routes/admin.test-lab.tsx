@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
 import { adminApi } from "@/lib/admin-api";
+import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/admin/test-lab")({
   head: () => ({ meta: [{ title: "Test Lab — Life OS Admin" }, { name: "description", content: "Create 300 test members, settle one simulated business day at a time and reset to today." }, { property: "og:title", content: "Test Lab — Life OS Admin" }, { property: "og:description", content: "Create 300 test members, settle one simulated business day at a time and reset to today." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: TestLab,
 });
 
-type Status = { enabled: boolean; simulated_date: string | null; today: string; days_run: number; root_life_id: string | null; members: number; paid_activations: number; waiting_settlement: number; settled: number; statements_closed: number; totals: Record<string, number>; matching_flushed: number; daily: Daily[]; last_day: { settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number } | null };
+type Status = { enabled: boolean; simulated_date: string | null; today: string; days_run: number; root_life_id: string | null; members: number; paid_activations: number; waiting_settlement: number; settled: number; statements_closed: number; totals: Record<string, number>; matching_flushed: number; daily: Daily[]; matching_split?: MatchingSplit; ranks?: { name: string; required_matchings: number; achieved: number | string }[]; top_matchings?: { username: string; life_id: string; lifetime_matchings: number }[]; last_day: { settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number } | null };
 type Daily = { day: string; sales: number; cashback: number; referral: number; generation: number; matching: number };
 type Login = { username: string; life_id: string; name: string | null; sponsor: string | null; side: string | null; settled: number | string };
 const tk = (n: number) => `৳${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -85,8 +86,15 @@ function TestLab() {
       {s.last_day && <p>Last run: settled {s.last_day.settled_date} → {s.last_day.processed} activations, {s.last_day.statements_closed} statements, {s.last_day.failed} failed. Next: {s.last_day.next_date}.</p>}
       <table className="w-full max-w-lg border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Commission</th><th className="p-1 text-right">Paid</th></tr></thead>
         <tbody>{Object.entries(s.totals).map(([k, v]) => <tr key={k} className="border-t border-border"><td className="p-1">{k}</td><td className="p-1 text-right">{tk(v)}</td></tr>)}
+          {s.matching_split && MATCHING_TYPES.map((m) => <tr key={m} className="border-t border-border"><td className="p-1 pl-5">• {MATCHING_TYPE_LABELS[m]} ({s.matching_split![m].paid_events} paid / {s.matching_split![m].flushed_events} flushed)</td><td className="p-1 text-right">{tk(s.matching_split![m].paid)}</td></tr>)}
           <tr className="border-t border-border font-bold"><td className="p-1">Total</td><td className="p-1 text-right">{tk(total)}</td></tr>
           <tr className="border-t border-border"><td className="p-1">Matching flushed events</td><td className="p-1 text-right">{s.matching_flushed}</td></tr></tbody></table>
+      {s.ranks && <div className="flex flex-wrap gap-6">
+        <table className="border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Rank</th><th className="p-1 text-right">Needs matchings</th><th className="p-1 text-right">Achieved</th></tr></thead>
+          <tbody>{s.ranks.map((r) => <tr key={r.name} className="border-t border-border"><td className="p-1">{r.name}</td><td className="p-1 text-right">{Number(r.required_matchings).toLocaleString("en-IN")}</td><td className="p-1 text-right">{r.achieved}</td></tr>)}</tbody></table>
+        {s.top_matchings && <table className="border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Top member</th><th className="p-1 text-left">Life ID</th><th className="p-1 text-right">Lifetime matchings</th></tr></thead>
+          <tbody>{s.top_matchings.map((t) => <tr key={t.life_id} className="border-t border-border"><td className="p-1">{t.username ?? "ROOT"}</td><td className="p-1">{t.life_id}</td><td className="p-1 text-right">{t.lifetime_matchings}</td></tr>)}</tbody></table>}
+      </div>}
       {s.daily.length > 0 && <table className="w-full border border-border text-xs"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Settled date</th><th className="p-1 text-right">Sales</th><th className="p-1 text-right">Cashback</th><th className="p-1 text-right">Referral</th><th className="p-1 text-right">Generation</th><th className="p-1 text-right">Matching</th></tr></thead>
         <tbody>{s.daily.map((d) => <tr key={d.day} className="border-t border-border"><td className="p-1">{d.day}</td><td className="p-1 text-right">{d.sales}</td><td className="p-1 text-right">{tk(Number(d.cashback))}</td><td className="p-1 text-right">{tk(Number(d.referral))}</td><td className="p-1 text-right">{tk(Number(d.generation))}</td><td className="p-1 text-right">{tk(Number(d.matching))}</td></tr>)}</tbody></table>}
       {logins && <div className="space-y-2">

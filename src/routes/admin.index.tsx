@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Page, DataTable, fmtDate } from "@/components/admin-kit";
 import { useAdmin } from "@/components/admin-kit";
 import { bdt } from "@/lib/member-api";
+import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Dashboard — Life OS Admin" }, { name: "description", content: "Life OS admin company overview." }, { property: "og:title", content: "Dashboard — Life OS Admin" }, { property: "og:description", content: "Life OS admin company overview." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -13,6 +14,7 @@ type Info = {
   bonus: Record<string, number>;
   withdraw: { APPROVED: number; PENDING: number; REJECTED: number; charges: number };
   pools: { pool: string; balance: number }[];
+  matching_split?: MatchingSplit;
 };
 
 const BONUS_LABELS: Record<string, string> = {
@@ -46,6 +48,12 @@ function Dashboard() {
               BONUS_LABELS[k] ?? k,
               <b key="v">{bdt(v)}</b>,
             ])}
+          />
+          <h3 style={{ margin: "18px 0 4px" }}>Matching Bonus by Type</h3>
+          <DataTable
+            head={["Matching Type", "Paid Events", "Flushed (Daily Cap)", "Total Paid"]}
+            rows={d.matching_split ? MATCHING_TYPES.map((m) => [MATCHING_TYPE_LABELS[m], d.matching_split![m].paid_events, d.matching_split![m].flushed_events, <b key="p">{bdt(d.matching_split![m].paid)}</b>]) : []}
+            empty="No matching yet"
           />
           <h3 style={{ margin: "18px 0 4px" }}>Withdrawals</h3>
           <DataTable

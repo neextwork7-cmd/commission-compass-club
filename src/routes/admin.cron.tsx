@@ -4,13 +4,15 @@ import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
 import { ADMIN_API_BASE } from "@/lib/admin-api";
+import { bdt } from "@/lib/member-api";
+import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/admin/cron")({
   head: () => ({ meta: [{ title: "Cron Setup — Life OS Admin" }, { name: "description", content: "Commission scheduler status and cPanel cron setup for Life OS." }, { property: "og:title", content: "Cron Setup — Life OS Admin" }, { property: "og:description", content: "Commission scheduler status and cPanel cron setup for Life OS." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: CronSetup,
 });
 
-type Status = { url: string | null; endpoint_path: string; schedule: string; timezone: string; server_enabled: boolean; finance_approved: boolean; mode: string; cli_command: string; url_command: string; last_run: { at: string; result: { status: string; failed?: number } } | null };
+type Status = { url: string | null; endpoint_path: string; schedule: string; timezone: string; server_enabled: boolean; finance_approved: boolean; mode: string; cli_command: string; url_command: string; last_run: { at: string; result: { status: string; failed?: number } } | null; software_date?: string; matching_total?: MatchingSplit; matching_today?: MatchingSplit; matching_last_day?: MatchingSplit };
 function CronSetup() {
   const q = useAdmin<Status>("cron", "/cron");
   const [message, setMessage] = useState<string | null>(null);
@@ -30,6 +32,11 @@ function CronSetup() {
         <dt>Last URL invocation</dt><dd>{data.last_run ? `${data.last_run.at} — ${data.last_run.result.status}` : "No verified invocation"}</dd>
         <dt>Host schedule</dt><dd>Installation must be confirmed in cPanel.</dd>
       </dl>
+      {data.matching_total && <>
+        <h3>Matching by Type (cron settlement)</h3>
+        <table className="w-full max-w-2xl border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Matching Type</th><th className="p-1 text-right">Previous day</th><th className="p-1 text-right">Today ({data.software_date})</th><th className="p-1 text-right">All time</th><th className="p-1 text-right">Events (paid / flushed)</th></tr></thead>
+          <tbody>{MATCHING_TYPES.map((m) => <tr key={m} className="border-t border-border"><td className="p-1">{MATCHING_TYPE_LABELS[m]}</td><td className="p-1 text-right">{bdt(data.matching_last_day?.[m].paid)}</td><td className="p-1 text-right">{bdt(data.matching_today?.[m].paid)}</td><td className="p-1 text-right"><b>{bdt(data.matching_total![m].paid)}</b></td><td className="p-1 text-right">{data.matching_total![m].paid_events} / {data.matching_total![m].flushed_events}</td></tr>)}</tbody></table>
+      </>}
       <h3>Cron URL</h3>
       <div className="flex items-start gap-2"><code className="min-w-0 break-all">{cronUrl}</code><Button variant="outline" size="icon" title="Copy cron URL" aria-label="Copy cron URL" onClick={() => void copy(cronUrl)}><Copy /></Button></div>
       {!data.url && <p>Set cron_base_url to your HTTPS backend address in the private server configuration to display the complete URL.</p>}
