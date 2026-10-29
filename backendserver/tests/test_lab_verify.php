@@ -23,7 +23,7 @@ function check(string $name, bool $ok, string $detail = ''): void {
 $accounts=DB::all("SELECT id FROM users");
 // ---------- 2. Independent plan model ----------
 $tree = []; foreach (DB::all('SELECT user_id, sponsor_id, placement_parent_id, placement_side FROM lo_tree') as $t) $tree[(int) $t['user_id']] = $t;
-$sales = DB::all("SELECT s.id, s.user_id, s.activation_id FROM lo_sales s JOIN lo_activations a ON a.id=s.activation_id WHERE a.payment_status='SUCCESS' ORDER BY s.id");
+$sales = DB::all("SELECT s.id, s.user_id, s.activation_id, DATE(s.created_at) AS day FROM lo_sales s JOIN lo_activations a ON a.id=s.activation_id WHERE a.payment_status='SUCCESS' ORDER BY s.id");
 $GEN = [1 => 50, 2 => 30, 3 => 25, 4 => 20, 5 => 18, 6 => 15, 7 => 12, 8 => 10, 9 => 10, 10 => 10];
 $exp = []; $add = function (int $u, string $t, float $a) use (&$exp) { $exp[$u][$t] = ($exp[$u][$t] ?? 0) + $a; };
 $daily = []; $isActive = [(int) DB::val("SELECT user_id FROM lo_tree WHERE sponsor_id IS NULL AND is_active=1 ORDER BY user_id LIMIT 1") => true]; $carry = []; $legs = []; $saleMatch = [];
@@ -59,8 +59,10 @@ foreach ($sales as $s) {
     foreach (array_keys($cand) as $b) {
         if (++$n > 11) break;
         // Daily cap ৳5,000 per ID: excess of this event is flushed, the event still counts.
-        $pay = max(0.0, min(150 / 2 ** ($n - 1), 5000 - ($daily[$b] ?? 0)));
-        $daily[$b] = ($daily[$b] ?? 0) + $pay;
+        // Cap is per ID per business day (multi-day Test Lab runs reset it each day).
+        $dk = $b . '|' . $s['day'];
+        $pay = max(0.0, min(150 / 2 ** ($n - 1), 5000 - ($daily[$dk] ?? 0)));
+        $daily[$dk] = ($daily[$dk] ?? 0) + $pay;
         if ($pay > 0) $add($b, 'MATCHING', $pay);
     }
     $saleMatch[$sid] = min(11, $n);
