@@ -38,7 +38,6 @@ function TestLab() {
       await q.refetch();
       if (logins) await loadLogins();
     } catch (e) { setMsg((e as Error).message); }
-    finally { setBusy(false); }
   };
 
   const reset = async () => {
@@ -50,7 +49,6 @@ function TestLab() {
       setMsg(`Removed ${r.removed_accounts} accounts. ROOT kept, all commission data cleared, software date set to today. Press Create 300 Members next.`);
       await q.refetch();
     } catch (e) { setMsg((e as Error).message); }
-    finally { setBusy(false); }
   };
 
   const create = async () => {
@@ -61,7 +59,6 @@ function TestLab() {
       setMsg(`${r.created} paid test members created (usernames ${r.usernames}, password ${r.password}). Nothing settled yet — press Run 1 Day.`);
       await q.refetch();
     } catch (e) { setMsg((e as Error).message); }
-    finally { setBusy(false); }
   };
 
   const addSales = async () => {
