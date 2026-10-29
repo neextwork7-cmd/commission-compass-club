@@ -241,6 +241,7 @@ $router->get('/api/admin/company-info', function () {
         'withdraw' => ['APPROVED' => $w('APPROVED'), 'PENDING' => $w('PENDING'), 'REJECTED' => $w('REJECTED'),
             'charges' => (float) DB::val("SELECT COALESCE(SUM(charge),0) FROM lo_withdrawals WHERE status = 'APPROVED'")],
         'pools' => DB::all('SELECT * FROM lo_pools'),
+        'matching_split' => \LifeOS\Engine\MatchingStats::split(),
     ]);
 });
 

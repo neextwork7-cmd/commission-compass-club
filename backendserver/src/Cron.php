@@ -29,6 +29,11 @@ final class Cron
             'last_run' => $last ? json_decode((string) $last, true) : null,
             'cli_command' => '/usr/local/bin/php ' . escapeshellarg($path) . ($enabled && $approved ? ' --execute' : ' --dry-run') . ' --batch=100',
             'url_command' => '/usr/local/bin/php ' . escapeshellarg($bridge),
-            'scheduler_verified' => false];
+            'scheduler_verified' => false,
+            // Software date follows the Test Lab clock when it is on.
+            'software_date' => (string) DB::val('SELECT CURRENT_DATE()'),
+            'matching_total' => \LifeOS\Engine\MatchingStats::split(),
+            'matching_today' => \LifeOS\Engine\MatchingStats::split(null, (string) DB::val('SELECT CURRENT_DATE()')),
+            'matching_last_day' => \LifeOS\Engine\MatchingStats::split(null, (string) DB::val('SELECT CURRENT_DATE() - INTERVAL 1 DAY'))];
     }
 }
