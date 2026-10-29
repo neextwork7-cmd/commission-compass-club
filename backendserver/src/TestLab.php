@@ -23,7 +23,7 @@ final class TestLab
     }
 
     /**
-     * Serialises every Test Lab action (reset, seed, day run, month step) so two admin tabs or a retried
+     * Serialises every Test Lab action (reset, seed, day run) so two admin tabs or a retried
      * request can never interleave member creation, settlement and deletion.
      */
     private static function exclusive(callable $fn, bool $quiet = false): mixed
@@ -145,7 +145,7 @@ final class TestLab
             if ($root === null) throw new HttpError('ROOT account not found', 409);
             if ((int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]) > 0) throw new HttpError('Delete test accounts first (reset)', 409);
             self::setClock(self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()'));
-            self::createMembers(1, $count, $seed, false);
+            self::createMembers(1, $count, $seed);
             DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
             return ['created' => $count, 'password' => 'test1234', 'usernames' => "test1 … test$count", 'logins' => self::logins()];
         });
@@ -153,20 +153,19 @@ final class TestLab
 
     /**
      * Inserts paid-but-unsettled members test{$from}..test{$to} under existing accounts (no commission here).
-     * Narrow mode (300 seed) favours recent sponsors for deep chains; wide mode mixes in random sponsors so
-     * large month runs keep realistic team widths while still reaching 10+ generations.
+     * Mostly recent sponsors so the tree reaches 10+ generations.
      */
-    private static function createMembers(int $from, int $to, int $seed, bool $wide): void
+    private static function createMembers(int $from, int $to, int $seed): void
     {
         static $hash = null;
         $hash ??= password_hash('test1234', PASSWORD_DEFAULT);
-        mt_srand($seed + $from);
-        DB::tx(function () use ($from, $to, $hash, $wide) {
+        mt_srand($seed);
+        DB::tx(function () use ($from, $to, $hash) {
             $ids = array_map('intval', array_column(DB::all('SELECT id FROM users ORDER BY id'), 'id'));
             for ($i = $from; $i <= $to; $i++) {
                 $n = count($ids);
-                $recent = $wide ? mt_rand(0, 9) < 4 : mt_rand(0, 9) < 6;
-                $sponsor = $recent ? $ids[max(0, $n - 1 - mt_rand(0, $wide ? 15 : 3))] : $ids[mt_rand(0, $n - 1)];
+                $recent = mt_rand(0, 9) < 6;
+                $sponsor = $recent ? $ids[max(0, $n - 1 - mt_rand(0, 3))] : $ids[mt_rand(0, $n - 1)];
                 $team = mt_rand(0, 1) ? 'L' : 'R';
                 $life = sprintf('LT%06d', $i);
                 $id = DB::insert('INSERT INTO users (life_id, membership_no, referral_code, referred_by, phone, email, pin_hash, status, accepted_terms, username)
