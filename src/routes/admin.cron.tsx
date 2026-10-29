@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
 import { ADMIN_API_BASE, adminApi } from "@/lib/admin-api";
-import { useTestLabAction } from "@/components/test-lab-actions";
+import { settleDay, useTestLabAction } from "@/components/test-lab-actions";
 import { bdt } from "@/lib/member-api";
 import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
@@ -23,7 +23,7 @@ function CronSetup() {
   const addSales = async () => {
     setMessage(null);
     try {
-      const r = await lab.run("sales", () => adminApi<{ added: number; from: string; to: string; date: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: {} }));
+      const r = await lab.run("sales", (run_id) => adminApi<{ added: number; from: string; to: string; date: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: { run_id } }));
       setMessage(`${r.added} new sales added on ${r.date} (${r.from} … ${r.to}, password test1234). ${r.waiting} waiting — press Run 1 Day Settle.`);
       await q.refetch();
     } catch (e) { setMessage((e as Error).message); }
@@ -31,7 +31,7 @@ function CronSetup() {
   const runDay = async () => {
     setMessage(null);
     try {
-      const r = await lab.run("run", () => adminApi<{ settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number }>("/test-lab/run-day", { method: "POST", body: {} }));
+      const r = await lab.run("run", settleDay);
       setMessage(`Settled ${r.settled_date}: ${r.processed} activations, ${r.statements_closed} statements closed, ${r.failed} failed. Software date is now ${r.next_date}.`);
       await q.refetch();
     } catch (e) { setMessage((e as Error).message); }

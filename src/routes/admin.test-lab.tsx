@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Page, Msg, useAdmin } from "@/components/admin-kit";
 import { Button } from "@/components/ui/button";
 import { adminApi } from "@/lib/admin-api";
-import { useTestLabAction } from "@/components/test-lab-actions";
+import { settleDay, useTestLabAction } from "@/components/test-lab-actions";
 import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/admin/test-lab")({
@@ -33,7 +33,7 @@ function TestLab() {
   const runDay = async () => {
     setMsg(null);
     try {
-      const r = await run("run", () => adminApi<{ settled_date: string; next_date: string; processed: number; statements_closed: number; failed: number }>("/test-lab/run-day", { method: "POST", body: {} }));
+      const r = await run("run", settleDay);
       setMsg(`Settled ${r.settled_date}: ${r.processed} activations, ${r.statements_closed} statements closed, ${r.failed} failed. Software date is now ${r.next_date}.`);
       await q.refetch();
       if (logins) await loadLogins();
@@ -44,7 +44,7 @@ function TestLab() {
     if (window.prompt("Delete ALL accounts except ROOT and ALL commission/transaction data, and set the software date back to today? Type RESET") !== "RESET") { setMsg("Cancelled — type RESET to confirm."); return; }
     setMsg(null);
     try {
-      const r = await run("reset", () => adminApi<{ removed_accounts: number }>("/test-lab/reset", { method: "POST", body: { confirm: "RESET" } }));
+      const r = await run("reset", (run_id) => adminApi<{ removed_accounts: number }>("/test-lab/reset", { method: "POST", body: { confirm: "RESET", run_id } }));
       setLogins(null);
       setMsg(`Removed ${r.removed_accounts} accounts. ROOT kept, all commission data cleared, software date set to today. Press Create 300 Members next.`);
       await q.refetch();
@@ -54,7 +54,7 @@ function TestLab() {
   const create = async () => {
     setMsg(null);
     try {
-      const r = await run("create", () => adminApi<{ created: number; usernames: string; password: string; logins: Login[] }>("/test-lab/seed", { method: "POST", body: {} }));
+      const r = await run("create", (run_id) => adminApi<{ created: number; usernames: string; password: string; logins: Login[] }>("/test-lab/seed", { method: "POST", body: { run_id } }));
       setLogins(r.logins);
       setMsg(`${r.created} paid test members created (usernames ${r.usernames}, password ${r.password}). Nothing settled yet — press Run 1 Day.`);
       await q.refetch();
@@ -64,7 +64,7 @@ function TestLab() {
   const addSales = async () => {
     setMsg(null);
     try {
-      const r = await run("sales", () => adminApi<{ added: number; from: string; to: string; date: string; password: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: {} }));
+      const r = await run("sales", (run_id) => adminApi<{ added: number; from: string; to: string; date: string; password: string; waiting: number }>("/test-lab/add-sales", { method: "POST", body: { run_id } }));
       setMsg(`${r.added} new sales added on ${r.date} (members ${r.from} … ${r.to}, password ${r.password}). Waiting for settlement: ${r.waiting}. Press Run 1 Day to settle.`);
       await q.refetch();
       if (logins) await loadLogins();
