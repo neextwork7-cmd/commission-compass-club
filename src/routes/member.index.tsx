@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { referralJoinUrl, type JoinTeam } from "@/lib/join-fields";
 import { Page, useMember } from "@/components/member-kit";
 import { bdt, LEDGER_LABELS } from "@/lib/member-api";
+import { MATCHING_TYPE_LABELS, MATCHING_TYPES, type MatchingSplit } from "@/lib/matching-split";
 
 export const Route = createFileRoute("/member/")({
   head: () => ({ meta: [{ title: "Dashboard — Life OS Member" }, { name: "description", content: "Life OS member dashboard." }, { property: "og:title", content: "Dashboard — Life OS Member" }, { property: "og:description", content: "Life OS member dashboard." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/member/")({
 });
 
 type Me = { name: string; life_id: string; referral_code: string; phone: string; email: string | null; status: string; created_at: string; referred_by: string | null; total_referral: number };
-type Wallet = { withdrawable: number; pending_withdrawal: number; withdrawn: number; cashback_service_only: number; service_balance: number; recharge_pending: number; by_type: Record<string, number> };
+type Wallet = { withdrawable: number; pending_withdrawal: number; withdrawn: number; cashback_service_only: number; service_balance: number; recharge_pending: number; by_type: Record<string, number>; matching_split?: MatchingSplit };
 type Rank = { lifetime_matchings: number; current: { name?: string } | null };
 
 const Line = () => <tr><td colSpan={2}><hr /></td></tr>;
@@ -52,9 +53,13 @@ function Dashboard() {
               <table className="table_wallet" width="100%" border={0} cellSpacing={7} cellPadding={0} style={{ marginBottom: 40 }}>
                 <tbody>
                   <Title t="Credit Statement" />
-                  {["REFERRAL", "MATCHING", "GENERATION", "RANK", "ADJUSTMENT"].map((t, i) => (
-                    <Item key={t} k={`Total ${LEDGER_LABELS[t]}`} v={bdt(by[t])} w={i === 1} />
-                  ))}
+                  {["REFERRAL", "MATCHING", "GENERATION", "RANK", "ADJUSTMENT"].map((t, i) => [
+                    <Item key={t} k={`Total ${LEDGER_LABELS[t]}`} v={bdt(by[t])} w={i === 1} />,
+                    // Matching is shown again split by the bill that was paid: Binary or Enrollment.
+                    ...(t === "MATCHING" ? MATCHING_TYPES.map((m) => (
+                      <Item key={m} k={`\u00a0\u00a0\u2022 ${MATCHING_TYPE_LABELS[m]} (${w?.matching_split?.[m].paid_events ?? 0})`} v={bdt(w?.matching_split?.[m].paid)} />
+                    )) : []),
+                  ])}
                   <Line />
                   <Sum k="All Total Amount" v={bdt(totalIn)} />
                   <Sum k="Total Withdrawals Amount" v={`- ${bdt(w?.withdrawn)}`} />

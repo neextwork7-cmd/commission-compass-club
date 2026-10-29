@@ -96,6 +96,26 @@ check('every consumed volume unit used in exactly one pair', (int) DB::val("SELE
 $maxGen = 0; foreach ($sales as $s) { $d = 0; $c = $tree[(int) $s['user_id']]['sponsor_id']; while ($c !== null) { $d++; $c = $tree[(int) $c]['sponsor_id']; } $maxGen = max($maxGen, $d); }
 check("tree reaches generation depth $maxGen (≥10 needed to test all 10 levels)", $maxGen >= 10);
 
+// Rank: lifetime matchings = every matching event (paid or flushed); ranks follow the approved threshold list.
+$life = []; foreach (DB::all('SELECT beneficiary_id b, COUNT(*) c FROM lo_matching_events GROUP BY beneficiary_id') as $r) $life[(int) $r['b']] = (int) $r['c'];
+$lifeBad = 0; foreach (DB::all('SELECT user_id, lifetime_matchings FROM lo_tree') as $r) if ((int) $r['lifetime_matchings'] !== ($life[(int) $r['user_id']] ?? 0)) $lifeBad++;
+check('lifetime matchings equal counted matching events', $lifeBad === 0, "$lifeBad differ");
+$RANKS = ['Member' => 0, 'Silver Executive' => 100, 'Gold Executive' => 300, 'Gold/Executive' => 1000, 'Platinum Executive' => 5000, 'Diamond Executive' => 25000, 'Crown Executive' => 125000, 'Ambassador' => 500000, 'Global Ambassador' => 1500000];
+$have = []; foreach (DB::all('SELECT ur.user_id, r.name FROM lo_user_ranks ur JOIN lo_ranks r ON r.id = ur.rank_id') as $r) $have[(int) $r['user_id']][] = $r['name'];
+$rankBad = 0; $rankCount = [];
+foreach ($life as $u => $c) {
+    $want = array_keys(array_filter($RANKS, fn ($need) => $need <= $c));
+    $got = $have[$u] ?? []; sort($want); sort($got);
+    if ($want !== $got) $rankBad++;
+    foreach ($got as $n) $rankCount[$n] = ($rankCount[$n] ?? 0) + 1;
+}
+check('every rank matches lifetime matchings (100 Silver, 300 Gold, 1,000 Gold/Executive …)', $rankBad === 0, "$rankBad users differ");
+echo 'Ranks achieved: ' . json_encode($rankCount) . ', top lifetime matchings: ' . (empty($life) ? 0 : max($life)) . "\n";
+$split = DB::one("SELECT SUM(CASE WHEN selected_type='BINARY' AND payout_status='PAID' THEN actual_payout END) b, SUM(CASE WHEN selected_type='ENROLLMENT' AND payout_status='PAID' THEN actual_payout END) e FROM lo_matching_events");
+$ml = (float) DB::val("SELECT COALESCE(SUM(amount),0) FROM lo_ledger WHERE ledger_type='MATCHING' AND status='PAID'");
+check('Binary + Enrollment matching equals matching ledger', abs((float) $split['b'] + (float) $split['e'] - $ml) < 0.00001, "{$split['b']} + {$split['e']} vs $ml");
+echo "Matching split ৳ — binary {$split['b']}, enrollment {$split['e']}\n";
+
 $tot = DB::one("SELECT SUM(CASE WHEN ledger_type='CASHBACK' THEN amount END) cb, SUM(CASE WHEN ledger_type='REFERRAL' THEN amount END) ref, SUM(CASE WHEN ledger_type='GENERATION' THEN amount END) gen, SUM(CASE WHEN ledger_type='MATCHING' THEN amount END) mat FROM lo_ledger WHERE status='PAID'");
 echo "\nAccounts: " . count($accounts) . ", paid activations: " . count($sales) . ", matching events: " . (int) DB::val('SELECT COUNT(*) FROM lo_matching_events') . "\n";
 echo "Totals ৳ — cashback {$tot['cb']}, referral {$tot['ref']}, generation {$tot['gen']}, matching {$tot['mat']}\n";

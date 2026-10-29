@@ -188,6 +188,7 @@ $router->get('/api/member/wallet', function () {
         'service_balance' => \LifeOS\Engine\Wallet::service($uid),
         'recharge_pending' => (float) DB::val("SELECT COALESCE(SUM(amount),0) FROM lo_recharges WHERE user_id = ? AND status = 'PENDING'", [$uid]),
         'by_type' => $ledger,
+        'matching_split' => \LifeOS\Engine\MatchingStats::split($uid),
         'legacy_wallet' => $wallet,
     ]);
 });

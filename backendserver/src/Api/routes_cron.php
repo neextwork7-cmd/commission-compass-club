@@ -36,15 +36,26 @@ $router->get('/api/admin/test-lab', function () {
 });
 $router->post('/api/admin/test-lab/run-day', function () {
     Auth::admin();
+    \LifeOS\TestLab::$runId = (string) (Http::body()['run_id'] ?? '');
     Http::ok(\LifeOS\TestLab::runDay() + ['status' => \LifeOS\TestLab::status()]);
 });
 $router->post('/api/admin/test-lab/reset', function () {
     Auth::admin();
+    \LifeOS\TestLab::$runId = (string) (Http::body()['run_id'] ?? '');
     $b = Http::body();
     if (($b['confirm'] ?? '') !== 'RESET') throw new HttpError('Type RESET to confirm', 422);
     // Reset only clears data and returns to today's date; members are created by the separate Create button.
     $out = \LifeOS\TestLab::reset();
     Http::ok($out + ['status' => \LifeOS\TestLab::status()]);
+});
+$router->get('/api/admin/test-lab/progress', function () {
+    Auth::admin();
+    Http::ok(\LifeOS\TestLab::getProgress());
+});
+$router->post('/api/admin/test-lab/add-sales', function () {
+    Auth::admin();
+    \LifeOS\TestLab::$runId = (string) (Http::body()['run_id'] ?? '');
+    Http::ok(\LifeOS\TestLab::addSales(300) + ['status' => \LifeOS\TestLab::status()]);
 });
 $router->get('/api/admin/test-lab/logins', function () {
     Auth::admin();
@@ -52,5 +63,6 @@ $router->get('/api/admin/test-lab/logins', function () {
 });
 $router->post('/api/admin/test-lab/seed', function () {
     Auth::admin();
+    \LifeOS\TestLab::$runId = (string) (Http::body()['run_id'] ?? '');
     Http::ok(\LifeOS\TestLab::seed(300) + ['status' => \LifeOS\TestLab::status()]);
 });

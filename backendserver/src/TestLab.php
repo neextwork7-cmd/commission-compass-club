@@ -15,6 +15,9 @@ final class TestLab
         'lo_daily_caps', 'lo_statements', 'lo_ledger', 'lo_allocations', 'lo_pool_movements', 'lo_sales', 'lo_activations',
         'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges'];
 
+    /** Browser-generated id of the action being run, so the progress bar never shows another action's record. */
+    public static string $runId = '';
+
     public static function enabled(): bool { return Config::get('test_lab_enabled', false) === true; }
 
     private static function guard(): void
@@ -87,6 +90,9 @@ final class TestLab
             'settled' => (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE processed=1"),
             'statements_closed' => (int) DB::val('SELECT COUNT(*) FROM lo_statements'),
             'totals' => ['CASHBACK' => $sum('CASHBACK'), 'REFERRAL' => $sum('REFERRAL'), 'GENERATION' => $sum('GENERATION'), 'MATCHING' => $sum('MATCHING')],
+            'matching_split' => \LifeOS\Engine\MatchingStats::split(),
+            'ranks' => DB::all('SELECT r.name, r.required_matchings, COUNT(ur.user_id) AS achieved FROM lo_ranks r LEFT JOIN lo_user_ranks ur ON ur.rank_id = r.id GROUP BY r.id, r.name, r.required_matchings ORDER BY r.id'),
+            'top_matchings' => DB::all('SELECT u.username, u.life_id, t.lifetime_matchings FROM lo_tree t JOIN users u ON u.id = t.user_id ORDER BY t.lifetime_matchings DESC, u.id LIMIT 5'),
             'matching_flushed' => (int) DB::val("SELECT COUNT(*) FROM lo_matching_events WHERE payout_status='FLUSHED'"),
             'daily' => DB::all("SELECT DATE(created_at) AS day, COUNT(DISTINCT sale_id) AS sales,
                 ROUND(SUM(CASE WHEN ledger_type='CASHBACK' THEN amount ELSE 0 END),2) AS cashback,
@@ -117,6 +123,7 @@ final class TestLab
             $root = self::rootId();
             if ($root === null) throw new HttpError('ROOT account not found', 409);
             $removed = (int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]);
+            self::progress('reset', 0, 1);
             DB::tx(function () use ($root) {
                 foreach (self::TABLES as $t) DB::run("DELETE FROM $t");
                 DB::run('UPDATE lo_pools SET balance = 0');
@@ -131,6 +138,7 @@ final class TestLab
             // Back to the real Dhaka date; nothing is settled until Run 1 Day is pressed.
             self::setClock(null);
             self::setClock((string) DB::val('SELECT CURRENT_DATE()'));
+            self::progress('reset', 1, 1);
             return ['removed_accounts' => $removed];
         });
     }
@@ -153,63 +161,128 @@ final class TestLab
 
     /**
      * Inserts paid-but-unsettled members test{$from}..test{$to} under existing accounts (no commission here).
-     * Mostly recent sponsors so the tree reaches 10+ generations.
+     * 'deep' (first 300) mostly uses the newest sponsors so the tree reaches 10+ generations; 'spread' (later
+     * daily sales) mixes recent and random sponsors so new sales reach both old and new teams.
+     * Commits every 25 members so the admin progress bar can follow the work.
      */
-    private static function createMembers(int $from, int $to, int $seed): void
+    private static function createMembers(int $from, int $to, int $seed, string $mode = 'deep', string $action = 'create'): void
     {
         static $hash = null;
         $hash ??= password_hash('test1234', PASSWORD_DEFAULT);
         mt_srand($seed);
-        DB::tx(function () use ($from, $to, $hash) {
-            $ids = array_map('intval', array_column(DB::all('SELECT id FROM users ORDER BY id'), 'id'));
-            for ($i = $from; $i <= $to; $i++) {
-                $n = count($ids);
-                $recent = mt_rand(0, 9) < 6;
-                $sponsor = $recent ? $ids[max(0, $n - 1 - mt_rand(0, 3))] : $ids[mt_rand(0, $n - 1)];
-                $team = mt_rand(0, 1) ? 'L' : 'R';
-                $life = sprintf('LT%06d', $i);
-                $id = DB::insert('INSERT INTO users (life_id, membership_no, referral_code, referred_by, phone, email, pin_hash, status, accepted_terms, username)
-                    VALUES (?,?,?,?,?,?,?,"active",1,?)',
-                    [$life, $life, sprintf('TEST%04d', $i), DB::val('SELECT referral_code FROM users WHERE id=?', [$sponsor]),
-                     sprintf('0187%07d', $i), "test$i@example.test", $hash, "test$i"]);
-                DB::insert('INSERT INTO user_wallets (user_id) VALUES (?)', [$id]);
-                DB::insert('INSERT INTO user_profiles (user_id, name) VALUES (?, ?)', [$id, "Test Member $i"]);
-                Placement::ensureNode($id, $sponsor);
-                Placement::place($id, $sponsor, $team);
-                DB::insert("INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status) VALUES (?,?,?,'SUCCESS')",
-                    [sprintf('ACT-TEST%06d', $i), $id, sprintf('TEST-PAY-%06d', $i)]);
-                $ids[] = $id;
-            }
+        $ids = array_map('intval', array_column(DB::all('SELECT id FROM users ORDER BY id'), 'id'));
+        $total = $to - $from + 1;
+        self::progress($action, 0, $total);
+        for ($chunk = $from; $chunk <= $to; $chunk += 25) {
+            $last = min($to, $chunk + 24);
+            DB::tx(function () use ($chunk, $last, $hash, $mode, &$ids) {
+                for ($i = $chunk; $i <= $last; $i++) {
+                    $n = count($ids);
+                    if ($mode === 'spread') $sponsor = mt_rand(0, 9) < 5 ? $ids[max(0, $n - 1 - mt_rand(0, 20))] : $ids[mt_rand(0, $n - 1)];
+                    else $sponsor = mt_rand(0, 9) < 6 ? $ids[max(0, $n - 1 - mt_rand(0, 3))] : $ids[mt_rand(0, $n - 1)];
+                    $team = mt_rand(0, 1) ? 'L' : 'R';
+                    $life = sprintf('LT%06d', $i);
+                    $id = DB::insert('INSERT INTO users (life_id, membership_no, referral_code, referred_by, phone, email, pin_hash, status, accepted_terms, username)
+                        VALUES (?,?,?,?,?,?,?,"active",1,?)',
+                        [$life, $life, sprintf('TEST%04d', $i), DB::val('SELECT referral_code FROM users WHERE id=?', [$sponsor]),
+                         sprintf('0187%07d', $i), "test$i@example.test", $hash, "test$i"]);
+                    DB::insert('INSERT INTO user_wallets (user_id) VALUES (?)', [$id]);
+                    DB::insert('INSERT INTO user_profiles (user_id, name) VALUES (?, ?)', [$id, "Test Member $i"]);
+                    Placement::ensureNode($id, $sponsor);
+                    Placement::place($id, $sponsor, $team);
+                    DB::insert("INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status) VALUES (?,?,?,'SUCCESS')",
+                        [sprintf('ACT-TEST%06d', $i), $id, sprintf('TEST-PAY-%06d', $i)]);
+                    $ids[] = $id;
+                }
+            });
+            self::progress($action, $last - $from + 1, $total);
+        }
+    }
+
+    /**
+     * Adds one day of new sales: $count new paid members (with their ৳1,000 activation transactions) on the
+     * current software date, keeping all existing data. Nothing is settled until Run 1 Day.
+     */
+    public static function addSales(int $count = 300): array
+    {
+        self::guard();
+        return self::exclusive(function () use ($count) {
+            if ($count < 1 || $count > 1000) throw new HttpError('Count must be 1–1000', 422);
+            if (self::rootId() === null) throw new HttpError('ROOT account not found', 409);
+            $start = (int) DB::val("SELECT COALESCE(MAX(CAST(SUBSTRING(life_id,3) AS UNSIGNED)),0) FROM users WHERE life_id LIKE 'LT%'");
+            if ($start === 0) throw new HttpError('Create the first 300 members first', 409);
+            self::setClock(self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()'));
+            self::createMembers($start + 1, $start + $count, 1000 + $start, 'spread', 'sales');
+            return ['added' => $count, 'from' => sprintf('test%d', $start + 1), 'to' => sprintf('test%d', $start + $count),
+                'date' => (string) DB::val('SELECT CURRENT_DATE()'), 'password' => 'test1234',
+                'waiting' => (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE payment_status='SUCCESS' AND processed=0")];
         });
     }
 
-    /** Runs the real cron settlement for the simulated day, then moves the software to the next day. */
-    public static function runDay(): array
+    /** Progress of the running Test Lab action, written outside transactions so other requests can read it. */
+    private static function progress(string $action, int $done, int $total, array $extra = []): void
+    {
+        DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_progress',?) ON DUPLICATE KEY UPDATE v=VALUES(v)",
+            [json_encode(['action' => $action, 'id' => substr(self::$runId, 0, 40), 'done' => $done, 'total' => max(1, $total)] + $extra)]);
+    }
+
+    public static function getProgress(): ?array
+    {
+        $p = json_decode((string) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_progress'") ?: 'null'), true);
+        if (!is_array($p)) return null;
+        $p['percent'] = (int) min(100, floor(100 * $p['done'] / max(1, $p['total'])));
+        return $p;
+    }
+
+    /**
+     * Runs the real cron settlement for the software date in slices of about $budget seconds (stays under the
+     * host's 100-second proxy limit). While activations remain it returns partial=true without changing the date;
+     * the call that finishes the day closes it at midnight and moves the whole software to the next day.
+     */
+    public static function runDay(float $budget = 40.0): array
     {
         self::guard();
-        return self::exclusive(function () {
+        @set_time_limit(300);
+        return self::exclusive(function () use ($budget) {
+            $t0 = microtime(true);
             $day = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
             self::setClock($day);
-            $total = ['processed' => 0, 'statements_closed' => 0, 'failed' => 0];
-            for ($i = 0; $i < 20; $i++) {
-                $r = Settlement::run(true, 1000, true);
-                foreach ($total as $k => $_) $total[$k] += (int) ($r[$k] ?? 0);
+            $waitingSql = "SELECT COUNT(*) FROM lo_activations WHERE payment_status='SUCCESS' AND processed=0";
+            $prev = self::getProgress();
+            $cont = self::$runId !== '' && $prev && $prev['action'] === 'run' && ($prev['id'] ?? '') === substr(self::$runId, 0, 40);
+            $total = $cont ? (int) $prev['total'] : (int) DB::val($waitingSql) + 1;
+            $acc = ['processed' => $cont ? (int) ($prev['p'] ?? 0) : 0, 'statements_closed' => $cont ? (int) ($prev['s'] ?? 0) : 0, 'failed' => $cont ? (int) ($prev['f'] ?? 0) : 0];
+            $mark = function () use (&$acc, $total, $waitingSql) {
+                self::progress('run', max(0, $total - 1 - (int) DB::val($waitingSql)), $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
+            };
+            $mark();
+            $thisCall = 0;
+            while (microtime(true) - $t0 < $budget) {
+                // Small batches so the progress bar moves; the settlement engine and its lock are unchanged.
+                $r = Settlement::run(true, 25, true);
                 if (($r['status'] ?? '') === 'busy') throw new HttpError('Settlement already running', 409);
+                foreach ($acc as $k => $_) $acc[$k] += (int) ($r[$k] ?? 0);
+                $thisCall += (int) ($r['processed'] ?? 0);
+                $mark();
                 if (($r['eligible_activations'] ?? 0) === 0 && ($r['unfinished_days'] ?? 0) === 0) break;
                 if (($r['processed'] ?? 0) === 0 && ($r['statements_closed'] ?? 0) === 0) break;
             }
+            $left = (int) DB::val($waitingSql);
+            // Keep going on the next call while work remains and this slice made progress.
+            if ($left > 0 && $thisCall > 0) return ['partial' => true, 'settled_date' => $day, 'waiting' => $left] + $acc;
             $next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
             self::setClock($next);
             // Midnight close of the finished day happens on the new date.
             $close = Settlement::run(true, 1000, true);
-            $total['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
-            $total['failed'] += (int) ($close['failed'] ?? 0);
+            $acc['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
+            $acc['failed'] += (int) ($close['failed'] ?? 0);
+            self::progress('run', $total, $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
             $days = (int) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_days'") ?: 0) + 1;
-            $record = ['settled_date' => $day, 'next_date' => $next] + $total;
+            $record = ['settled_date' => $day, 'next_date' => $next] + $acc;
             DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [(string) $days]);
             DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_last',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode($record)]);
-            DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $total])]);
-            return $record;
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $acc])]);
+            return $record + ['partial' => false];
         });
     }
 }
