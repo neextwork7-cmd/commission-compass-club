@@ -22,6 +22,21 @@ final class TestLab
         if (!self::enabled()) throw new HttpError('Test lab is disabled on this server', 403);
     }
 
+    /**
+     * Serialises every Test Lab action (reset, seed, day run, month step) so two admin tabs or a retried
+     * request can never interleave member creation, settlement and deletion.
+     */
+    private static function exclusive(callable $fn, bool $quiet = false): mixed
+    {
+        $lock = 'lifeos:testlab:' . (string) DB::val('SELECT DATABASE()');
+        if ((int) DB::val('SELECT GET_LOCK(?, 0)', [$lock]) !== 1) {
+            if ($quiet) return null;
+            throw new HttpError('Test Lab is busy with another action — wait and refresh', 409);
+        }
+        try { return $fn(); }
+        finally { DB::val('SELECT RELEASE_LOCK(?)', [$lock]); }
+    }
+
     /** Simulated Dhaka date or null when the real clock is used. */
     public static function clock(): ?string
     {
@@ -88,36 +103,40 @@ final class TestLab
     public static function reset(): array
     {
         self::guard();
-        $root = self::rootId();
-        if ($root === null) throw new HttpError('ROOT account not found', 409);
-        $removed = (int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]);
-        DB::tx(function () use ($root) {
-            foreach (self::TABLES as $t) DB::run("DELETE FROM $t");
-            DB::run('UPDATE lo_pools SET balance = 0');
-            DB::run('DELETE FROM lo_tree WHERE user_id <> ?', [$root]);
-            DB::run('UPDATE lo_tree SET left_child_id=NULL, right_child_id=NULL, left_carry=0, right_carry=0, left_consumed=0, right_consumed=0, lifetime_matchings=0, is_active=1 WHERE user_id=?', [$root]);
-            DB::run('DELETE FROM user_profiles WHERE user_id <> ?', [$root]);
-            DB::run('DELETE FROM user_wallets WHERE user_id <> ?', [$root]);
-            DB::run('UPDATE user_wallets SET balance=0, frozen_balance=0, pending_balance=0, service_balance=0, cashback_balance=0 WHERE user_id=?', [$root]);
-            DB::run('DELETE FROM users WHERE id <> ?', [$root]);
-            DB::run("DELETE FROM lo_settings WHERE k IN ('test_lab_days','test_lab_last','cron_last_run','test_lab_job')");
+        return self::exclusive(function () {
+            $root = self::rootId();
+            if ($root === null) throw new HttpError('ROOT account not found', 409);
+            $removed = (int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]);
+            DB::tx(function () use ($root) {
+                foreach (self::TABLES as $t) DB::run("DELETE FROM $t");
+                DB::run('UPDATE lo_pools SET balance = 0');
+                DB::run('DELETE FROM lo_tree WHERE user_id <> ?', [$root]);
+                DB::run('UPDATE lo_tree SET left_child_id=NULL, right_child_id=NULL, left_carry=0, right_carry=0, left_consumed=0, right_consumed=0, lifetime_matchings=0, is_active=1 WHERE user_id=?', [$root]);
+                DB::run('DELETE FROM user_profiles WHERE user_id <> ?', [$root]);
+                DB::run('DELETE FROM user_wallets WHERE user_id <> ?', [$root]);
+                DB::run('UPDATE user_wallets SET balance=0, frozen_balance=0, pending_balance=0, service_balance=0, cashback_balance=0 WHERE user_id=?', [$root]);
+                DB::run('DELETE FROM users WHERE id <> ?', [$root]);
+                DB::run("DELETE FROM lo_settings WHERE k IN ('test_lab_days','test_lab_last','cron_last_run','test_lab_job')");
+            });
+            self::setClock(null);
+            return ['removed_accounts' => $removed];
         });
-        self::setClock(null);
-        return ['removed_accounts' => $removed];
     }
 
     /** Creates paid-but-unsettled members under ROOT. No commission is calculated here. */
     public static function seed(int $count = 300, int $seed = 11): array
     {
         self::guard();
-        if ($count < 1 || $count > 1000) throw new HttpError('Count must be 1–1000', 422);
-        $root = self::rootId();
-        if ($root === null) throw new HttpError('ROOT account not found', 409);
-        if ((int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]) > 0) throw new HttpError('Delete test accounts first (reset)', 409);
-        self::setClock((string) DB::val('SELECT CURRENT_DATE()'));
-        self::createMembers(1, $count, $seed, false);
-        DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
-        return ['created' => $count, 'password' => 'test1234', 'usernames' => "test1 … test$count"];
+        return self::exclusive(function () use ($count, $seed) {
+            if ($count < 1 || $count > 1000) throw new HttpError('Count must be 1–1000', 422);
+            $root = self::rootId();
+            if ($root === null) throw new HttpError('ROOT account not found', 409);
+            if ((int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]) > 0) throw new HttpError('Delete test accounts first (reset)', 409);
+            self::setClock((string) DB::val('SELECT CURRENT_DATE()'));
+            self::createMembers(1, $count, $seed, false);
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
+            return ['created' => $count, 'password' => 'test1234', 'usernames' => "test1 … test$count"];
+        });
     }
 
     /**
@@ -170,17 +189,19 @@ final class TestLab
     public static function startJob(int $members, int $days, int $seed = 11): array
     {
         self::guard();
-        if ($members < 1 || $members > 20000) throw new HttpError('Members must be 1–20000', 422);
-        if ($days < 1 || $days > 62) throw new HttpError('Days must be 1–62', 422);
-        $root = self::rootId();
-        if ($root === null) throw new HttpError('ROOT account not found', 409);
-        if ((int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]) > 0) throw new HttpError('Delete test accounts first (reset)', 409);
-        $start = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
-        self::setClock($start);
-        DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
-        $job = ['members' => $members, 'days' => $days, 'seed' => $seed, 'day' => 0, 'created' => 0, 'phase' => 'seed', 'start_date' => $start];
-        self::saveJob($job);
-        return $job;
+        return self::exclusive(function () use ($members, $days, $seed) {
+            if ($members < 1 || $members > 20000) throw new HttpError('Members must be 1–20000', 422);
+            if ($days < 1 || $days > 62) throw new HttpError('Days must be 1–62', 422);
+            $root = self::rootId();
+            if ($root === null) throw new HttpError('ROOT account not found', 409);
+            if ((int) DB::val('SELECT COUNT(*) FROM users WHERE id <> ?', [$root]) > 0) throw new HttpError('Delete test accounts first (reset)', 409);
+            $start = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
+            self::setClock($start);
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
+            $job = ['members' => $members, 'days' => $days, 'seed' => $seed, 'day' => 0, 'created' => 0, 'phase' => 'seed', 'start_date' => $start];
+            self::saveJob($job);
+            return $job;
+        });
     }
 
     /**
@@ -192,8 +213,16 @@ final class TestLab
         self::guard();
         @set_time_limit(300);
         $t0 = microtime(true);
+        $out = self::exclusive(fn () => self::stepLocked($t0, $budget), true);
+        return $out ?? (self::job() ?? []) + ['busy' => true];
+    }
+
+    private static function stepLocked(float $t0, float $budget): array
+    {
         $j = self::job();
         if ($j === null) throw new HttpError('No month run started', 409);
+        // Trust the database, not a possibly stale job copy, for how many members already joined.
+        $j['created'] = (int) DB::val("SELECT COUNT(*) FROM users WHERE life_id LIKE 'LT%'");
         while ($j['phase'] !== 'done' && microtime(true) - $t0 < $budget) {
             $day = (int) $j['day'];
             if ($j['phase'] === 'seed') {
@@ -235,27 +264,29 @@ final class TestLab
     public static function runDay(): array
     {
         self::guard();
-        $day = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
-        self::setClock($day);
-        $total = ['processed' => 0, 'statements_closed' => 0, 'failed' => 0];
-        for ($i = 0; $i < 20; $i++) {
-            $r = Settlement::run(true, 1000, true);
-            foreach ($total as $k => $_) $total[$k] += (int) ($r[$k] ?? 0);
-            if (($r['status'] ?? '') === 'busy') throw new HttpError('Settlement already running', 409);
-            if (($r['eligible_activations'] ?? 0) === 0 && ($r['unfinished_days'] ?? 0) === 0) break;
-            if (($r['processed'] ?? 0) === 0 && ($r['statements_closed'] ?? 0) === 0) break;
-        }
-        $next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
-        self::setClock($next);
-        // Midnight close of the finished day happens on the new date.
-        $close = Settlement::run(true, 1000, true);
-        $total['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
-        $total['failed'] += (int) ($close['failed'] ?? 0);
-        $days = (int) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_days'") ?: 0) + 1;
-        $record = ['settled_date' => $day, 'next_date' => $next] + $total;
-        DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [(string) $days]);
-        DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_last',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode($record)]);
-        DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $total])]);
-        return $record;
+        return self::exclusive(function () {
+            $day = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
+            self::setClock($day);
+            $total = ['processed' => 0, 'statements_closed' => 0, 'failed' => 0];
+            for ($i = 0; $i < 20; $i++) {
+                $r = Settlement::run(true, 1000, true);
+                foreach ($total as $k => $_) $total[$k] += (int) ($r[$k] ?? 0);
+                if (($r['status'] ?? '') === 'busy') throw new HttpError('Settlement already running', 409);
+                if (($r['eligible_activations'] ?? 0) === 0 && ($r['unfinished_days'] ?? 0) === 0) break;
+                if (($r['processed'] ?? 0) === 0 && ($r['statements_closed'] ?? 0) === 0) break;
+            }
+            $next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
+            self::setClock($next);
+            // Midnight close of the finished day happens on the new date.
+            $close = Settlement::run(true, 1000, true);
+            $total['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
+            $total['failed'] += (int) ($close['failed'] ?? 0);
+            $days = (int) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_days'") ?: 0) + 1;
+            $record = ['settled_date' => $day, 'next_date' => $next] + $total;
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [(string) $days]);
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_last',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode($record)]);
+            DB::run("INSERT INTO lo_settings (k,v) VALUES ('cron_last_run',?) ON DUPLICATE KEY UPDATE v=VALUES(v)", [json_encode(['at' => date(DATE_ATOM), 'result' => ['status' => 'executed', 'test_lab' => true] + $total])]);
+            return $record;
+        });
     }
 }
