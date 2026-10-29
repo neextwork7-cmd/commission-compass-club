@@ -74,6 +74,12 @@ final class TestLab
             'totals' => ['CASHBACK' => $sum('CASHBACK'), 'REFERRAL' => $sum('REFERRAL'), 'GENERATION' => $sum('GENERATION'), 'MATCHING' => $sum('MATCHING')],
             'matching_flushed' => (int) DB::val("SELECT COUNT(*) FROM lo_matching_events WHERE payout_status='FLUSHED'"),
             'job' => self::job(),
+            'daily' => DB::all("SELECT DATE(created_at) AS day, COUNT(DISTINCT sale_id) AS sales,
+                ROUND(SUM(CASE WHEN ledger_type='CASHBACK' THEN amount ELSE 0 END),2) AS cashback,
+                ROUND(SUM(CASE WHEN ledger_type='REFERRAL' THEN amount ELSE 0 END),2) AS referral,
+                ROUND(SUM(CASE WHEN ledger_type='GENERATION' THEN amount ELSE 0 END),2) AS generation,
+                ROUND(SUM(CASE WHEN ledger_type='MATCHING' THEN amount ELSE 0 END),3) AS matching
+                FROM lo_ledger WHERE status='PAID' GROUP BY DATE(created_at) ORDER BY day LIMIT 70"),
             'last_day' => json_decode((string) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_last'") ?: 'null'), true),
         ];
     }
@@ -172,7 +178,7 @@ final class TestLab
         $start = self::clock() ?? (string) DB::val('SELECT CURRENT_DATE()');
         self::setClock($start);
         DB::run("INSERT INTO lo_settings (k,v) VALUES ('test_lab_days','0') ON DUPLICATE KEY UPDATE v='0'");
-        $job = ['members' => $members, 'days' => $days, 'seed' => $seed, 'day' => 0, 'created' => 0, 'phase' => 'seed', 'start_date' => $start, 'history' => []];
+        $job = ['members' => $members, 'days' => $days, 'seed' => $seed, 'day' => 0, 'created' => 0, 'phase' => 'seed', 'start_date' => $start];
         self::saveJob($job);
         return $job;
     }
@@ -212,7 +218,6 @@ final class TestLab
                     $j['failed'] += (int) ($close['failed'] ?? 0);
                     $rec = ['settled_date' => $today, 'next_date' => $next, 'processed' => (int) $j['processed_today'],
                         'statements_closed' => (int) ($close['statements_closed'] ?? 0), 'failed' => (int) ($close['failed'] ?? 0), 'members' => (int) $j['created']];
-                    $j['history'][] = $rec;
                     $j['processed_today'] = 0;
                     $j['day'] = $day + 1;
                     $j['phase'] = $j['day'] >= $j['days'] ? 'done' : 'seed';
