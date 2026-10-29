@@ -46,4 +46,4 @@
 - Cron switches (commission_cron_enabled, cron_http_execute, cron_base_url) may live in non-secret backendserver/runtime.php, because signed Master writes cannot modify config.php/.env; finance release still needs the admin setting.
 - Plan compliance is checked by backendserver/tests/plan_simulation.php: it drives the real API and cron runner, then recomputes every commission with an independent model; run it on a fresh local DB only (it refuses non-local hosts).
 - Admin login accepts email or username (admin_users.name) on the PHP API; the admin form uses a text field so usernames like Admin are not blocked by email validation.
-- Test Lab month runs are resumable step jobs (~25s per request) whose compact state lives in lo_settings.test_lab_job (v is varchar(255)); keep per-day history derived from the ledger, never inside the job JSON.
+- Test Lab offers only Reset (ROOT kept, clock back to today, nothing created), Create 300 Members and Run 1 Day; every action runs under one MySQL GET_LOCK so concurrent admin clicks cannot interleave deletion, creation and settlement.
