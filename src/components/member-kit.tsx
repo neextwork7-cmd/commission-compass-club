@@ -42,9 +42,8 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
   {
     label: "Transaction",
     items: [
-      { to: "/member/transaction", label: "Balance Transfer" },
-      { to: "/member/transaction-report", label: "Transfer Reports" },
-      { to: "/member/receive-report", label: "Receive Reports" },
+      { to: "/member/transaction", label: "Active New ID" },
+      { to: "/member/transaction-report", label: "Active ID History" },
       { to: "/member/transaction-pin", label: "Transaction Password" },
     ],
   },

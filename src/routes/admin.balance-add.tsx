@@ -9,7 +9,7 @@ export const Route = createFileRoute("/admin/balance-add")({
 });
 
 function BalanceAdd() {
-  const [form, setForm] = useState({ life_id: "", amount: "", note: "" });
+  const [form, setForm] = useState({ life_id: "", amount: "", note: "", wallet: "DEPOSIT" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok?: boolean; text: string | null }>({ text: null });
 
@@ -18,9 +18,9 @@ function BalanceAdd() {
     setBusy(true);
     setMsg({ text: null });
     try {
-      await adminApi("/balance-add", { body: { life_id: form.life_id.trim(), amount: Number(form.amount), note: form.note } });
+      await adminApi("/balance-add", { body: { life_id: form.life_id.trim(), amount: Number(form.amount), note: form.note, wallet: form.wallet } });
       setMsg({ ok: true, text: `Balance updated for ${form.life_id.trim()}.` });
-      setForm({ life_id: "", amount: "", note: "" });
+      setForm({ ...form, life_id: "", amount: "", note: "" });
     } catch (x) { setMsg({ text: (x as Error).message }); }
     setBusy(false);
   };
@@ -29,6 +29,12 @@ function BalanceAdd() {
     <Page title="Balance Add" center>
       <Msg {...msg} />
       <form onSubmit={submit} style={{ maxWidth: 420, margin: "0 auto", textAlign: "left" }}>
+        <p><b>Wallet:</b><br />
+          <select value={form.wallet} onChange={(e) => setForm({ ...form, wallet: e.target.value })} style={{ width: "100%", padding: 6 }}>
+            <option value="DEPOSIT">Deposit Wallet (for Active New ID)</option>
+            <option value="ADJUSTMENT">Withdraw Wallet (adjustment)</option>
+          </select>
+        </p>
         <p><b>Life ID:</b><br />
           <input required value={form.life_id} onChange={(e) => setForm({ ...form, life_id: e.target.value })} placeholder="LOS10001" style={{ width: "100%", padding: 6 }} />
         </p>
@@ -41,7 +47,7 @@ function BalanceAdd() {
         <p style={{ textAlign: "center" }}>
           <button type="submit" disabled={busy} style={{ padding: "8px 28px" }}>{busy ? "Saving…" : "Add Balance"}</button>
         </p>
-        <p style={{ fontSize: 12, color: "#555", textAlign: "center" }}>Every adjustment is recorded as an ADJUSTMENT row in the bonus ledger.</p>
+        <p style={{ fontSize: 12, color: "#555", textAlign: "center" }}>Deposit wallet balance can only be used to activate IDs; withdraw wallet adjustments are recorded in the bonus ledger.</p>
       </form>
     </Page>
   );
