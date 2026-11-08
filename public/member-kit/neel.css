@@ -172,3 +172,8 @@
 .neel-login-page .lo-captcha-btn span { display: inline-block; width: 140px; height: 30px; line-height: 30px; border: thin solid #000; border-radius: 5px; background: var(--lo-blue); color: #fff; font-size: 12px; }
 .neel-login-page .lo-login-error { color: var(--lo-error); font-weight: bold; }
 .neel-login-page .lo-login-footer { text-align: center; line-height: 24px; background: rgba(13, 176, 214, 0.5); color: #000033; padding: 20px; border-radius: 0 0 30px 30px; }
+.neel .lo-wallets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 320px; margin: 10px auto; }
+.neel .lo-wallets .lo-status { width: auto; margin: 0; padding: 8px 6px; }
+.neel .lo-wallets .lo-status h2 { font-size: 14px; margin: 0; }
+.neel .lo-wallets .lo-status h4 { font-size: 18px; text-align: center; margin: 4px 0 0; }
+.neel .lo-status h4.lo-inactive { color: #ffb3b3; }
