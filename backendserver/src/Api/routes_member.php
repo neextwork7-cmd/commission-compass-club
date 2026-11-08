@@ -186,6 +186,8 @@ $router->get('/api/member/wallet', function () {
         'withdrawn' => $withdrawn,
         'cashback_service_only' => $cashback,
         'service_balance' => \LifeOS\Engine\Wallet::service($uid),
+        'deposit_balance' => \LifeOS\Engine\Wallet::deposit($uid),
+        'id_active' => (bool) DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' LIMIT 1", [$uid]),
         'recharge_pending' => (float) DB::val("SELECT COALESCE(SUM(amount),0) FROM lo_recharges WHERE user_id = ? AND status = 'PENDING'", [$uid]),
         'by_type' => $ledger,
         'matching_split' => \LifeOS\Engine\MatchingStats::split($uid),
@@ -531,6 +533,50 @@ $router->post('/api/member/transfers', function () {
         return $transferCode;
     });
     Http::ok(['transfer_code' => $code, 'amount' => $amount]);
+});
+
+// ---- Active New ID: pays one package from the Deposit wallet only; settlement (cron) pays the commissions ----
+const ACTIVE_ID_FEE = 1000.0;
+$router->post('/api/member/activate-id', function () {
+    $u = Auth::member();
+    $b = Http::body();
+    $uid = (int) $u['id'];
+    $receiver = trim((string) ($b['receiver'] ?? ''));
+    if ($receiver === '' || mb_strlen($receiver) > 40) throw new HttpError('User ID required');
+    if (!password_verify((string) ($b['password'] ?? ''), (string) $u['pin_hash'])) throw new HttpError('Login password is incorrect', 403);
+    if (empty($u['transaction_password_hash'])) throw new HttpError('Set your transaction password first', 403);
+    if (!password_verify((string) ($b['transaction_password'] ?? ''), (string) $u['transaction_password_hash'])) throw new HttpError('Transaction password is incorrect', 403);
+    $out = DB::tx(function () use ($uid, $receiver) {
+        $to = DB::one('SELECT id, life_id FROM users WHERE (life_id = ? OR username = ?) AND status <> "suspended"', [$receiver, $receiver]);
+        if (!$to) throw new HttpError('User ID not found', 404);
+        $toUid = (int) $to['id'];
+        foreach (array_unique([min($uid, $toUid), max($uid, $toUid)]) as $locked) DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [$locked]);
+        $settings = [];
+        foreach (DB::all('SELECT k, v FROM lo_settings') as $row) $settings[$row['k']] = $row['v'];
+        if (!\LifeOS\PanelPolicy::enabled($settings['transfer_status'] ?? '0')) throw new HttpError('Active New ID is currently disabled', 403);
+        if (DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status IN ('SUCCESS','PENDING')", [$toUid])) throw new HttpError('This ID is already active or has a pending activation', 409);
+        if (\LifeOS\Engine\Wallet::deposit($uid) + 1e-9 < ACTIVE_ID_FEE) throw new HttpError('Insufficient Deposit wallet balance', 422);
+        $code = 'ACT-' . strtoupper(bin2hex(random_bytes(8)));
+        $actId = DB::insert("INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status, fee) VALUES (?,?,?,'SUCCESS',?)",
+            [$code, $toUid, 'DEP-' . $code, ACTIVE_ID_FEE]);
+        DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, target_user_id, activation_id, note) VALUES (?,?,'ACTIVATE_ID',?,?,?,?)",
+            ['DEP-' . $code, $uid, -ACTIVE_ID_FEE, $toUid, $actId, 'Active New ID ' . $to['life_id']]);
+        return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE];
+    });
+    Http::ok($out);
+});
+
+// History: IDs I activated (sent) and activations paid for me (received), plus deposit additions.
+$router->get('/api/member/activate-id/history', function () {
+    $u = Auth::member();
+    $uid = (int) $u['id'];
+    Http::ok(DB::all("SELECT d.deposit_code, d.kind, d.amount, d.note, d.created_at,
+            CASE WHEN d.user_id = ? THEN 'SENT' ELSE 'RECEIVED' END AS direction,
+            fu.life_id AS from_life_id, tu.life_id AS to_life_id, a.activation_code, a.processed
+        FROM lo_deposits d JOIN users fu ON fu.id = d.user_id
+        LEFT JOIN users tu ON tu.id = d.target_user_id
+        LEFT JOIN lo_activations a ON a.id = d.activation_id
+        WHERE d.user_id = ? OR d.target_user_id = ? ORDER BY d.id DESC LIMIT 200", [$uid, $uid, $uid]));
 });
 
 /** One report for both directions; $side is a fixed column name, never request input. */
