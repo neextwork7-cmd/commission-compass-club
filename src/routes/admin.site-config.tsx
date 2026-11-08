@@ -17,7 +17,7 @@ const TOGGLES = [
   ["withdrawal_status", "Withdrawal Requests"],
   ["profile_edit_status", "Profile Editing"],
   ["matching_paused", "Pause Matching"],
-  ["transfer_status", "Balance Transfer"],
+  ["transfer_status", "Active New ID"],
   ["recharge_status", "Mobile Recharge"],
 ] as const;
 

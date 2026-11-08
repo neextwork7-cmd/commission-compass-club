@@ -11,7 +11,7 @@ export const Route = createFileRoute("/member/")({
 });
 
 type Me = { name: string; life_id: string; referral_code: string; phone: string; email: string | null; status: string; created_at: string; referred_by: string | null; total_referral: number };
-type Wallet = { withdrawable: number; pending_withdrawal: number; withdrawn: number; cashback_service_only: number; service_balance: number; recharge_pending: number; by_type: Record<string, number>; matching_split?: MatchingSplit };
+type Wallet = { withdrawable: number; pending_withdrawal: number; withdrawn: number; cashback_service_only: number; service_balance: number; deposit_balance?: number; id_active?: boolean; recharge_pending: number; by_type: Record<string, number>; matching_split?: MatchingSplit };
 type Rank = { lifetime_matchings: number; current: { name?: string } | null };
 
 const Line = () => <tr><td colSpan={2}><hr /></td></tr>;
@@ -70,7 +70,7 @@ function Dashboard() {
                   <Title t="Service Wallet Statement" />
                   <Item k="Cashback Wallet (service use only)" v={bdt(w?.cashback_service_only)} />
                   <Item k="All Total Out Amount" v={bdt(totalOut)} />
-                  <Item k="Transferable Balance (Balance Transfer)" v={bdt(w?.service_balance)} />
+                  <Item k="Deposit Wallet (Active New ID)" v={bdt(w?.deposit_balance)} />
                   <Item k="Pending Mobile Recharge" v={bdt(w?.recharge_pending)} />
                   <Line />
                   <Cur k="Remaining Current Balance" v={bdt(w?.withdrawable)} />
@@ -95,12 +95,17 @@ function Dashboard() {
               <br />
               <div className="div_block lo-status">
                 <h2>ID STATUS</h2>
-                <h4>{rank?.current?.name ?? "Member"}</h4>
+                <h4 className={w?.id_active ? undefined : "lo-inactive"} style={{ textAlign: "center" }}>{w ? (w.id_active ? "Activated" : "Not Active") : "…"}</h4>
               </div>
-              <br />
-              <div className="div_block lo-status">
-                <h2>CURRENT BALANCE</h2>
-                <h4>{bdt(w?.withdrawable)}</h4>
+              <div className="lo-wallets">
+                {([
+                  ["CASHBACK WALLET", w?.service_balance],
+                  ["DEPOSIT WALLET", w?.deposit_balance],
+                  ["WITHDRAW WALLET", w?.withdrawable],
+                  ["TOTAL BALANCE", Number(w?.service_balance ?? 0) + Number(w?.deposit_balance ?? 0) + Number(w?.withdrawable ?? 0)],
+                ] as [string, number | undefined][]).map(([k, v]) => (
+                  <div key={k} className="div_block lo-status"><h2>{k}</h2><h4>{bdt(v)}</h4></div>
+                ))}
               </div>
             </td>
           </tr>

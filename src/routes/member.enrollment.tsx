@@ -200,13 +200,6 @@ function Enrollment() {
         })()}
         {!tree.isLoading && !tree.data && <span className="error">No enrollment tree data yet.</span>}
       </div>
-      {tree.data && <BvSummary n={tree.data} />}
-      <PairCards data={pairs.data} loading={pairs.isLoading} nodes={nodes} />
-      <DataTable
-        caption={<> Daily Matching — each matching pays only the higher of Binary / Enrollment bill (Left {left}, Right {rows.length - left}) </>}
-        head={["Date", "Binary Bill", "Enrollment Bill", "Paid (one bill per matching)", "Events"]}
-        rows={daily.map((d) => [d.day, tk(d.binary_total), tk(d.enrollment_total), tk(d.paid), d.events])}
-      />
     </Page>
   );
 }

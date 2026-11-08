@@ -33,28 +33,6 @@ export function MatchingReport({ type, title }: { type: "BINARY" | "ENROLLMENT";
 
   return (
     <Page title={title} center>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10, margin: "0 0 14px" }}>
-        <div style={box}>
-          <b>Plan Rules</b>
-          <div>{rule}</div>
-          <div>Each sale: max {MATCHING_SCHEDULE.length} matchings, reserve ৳{MATCHING_RESERVE} (max paid ৳{MATCHING_LIMIT}).</div>
-          <div>Binary & Enrollment bills both calculated — only the higher ONE is paid per matching.</div>
-          <div>Daily cap ৳{DAILY_CAP.toLocaleString()} (Binary + Enrollment together); extra is flushed.</div>
-        </div>
-        <div style={box}>
-          <b>Payout Schedule (per sale)</b>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 10 }}>
-            {MATCHING_SCHEDULE.map((v, i) => <span key={i}>#{i + 1}: ৳{v.toFixed(3)}</span>)}
-          </div>
-        </div>
-        <div style={box}>
-          <b>Summary</b>
-          <div>Paid events: {paid.length} — {bdt(sum(paid, "actual_payout"))}</div>
-          <div>Flushed events: {flushed.length} — {bdt(sum(flushed, "calculated_payout"))}</div>
-          <div>Today paid (all matching): {bdt(todayPaid)} / ৳{DAILY_CAP.toLocaleString()}</div>
-          <div>Today remaining cap: {bdt(Math.max(0, DAILY_CAP - todayPaid))}</div>
-        </div>
-      </div>
       <DateFilter onApply={setApplied} />
       <DataTable
         style={{ marginTop: 20 }}
