@@ -23,6 +23,12 @@ final class Wallet
         return round($earned - (float) DB::val($sql, $params) - $recharge, 6);
     }
 
+    /** Deposit wallet: admin deposits minus Active New ID payments. Only this wallet can activate IDs. */
+    public static function deposit(int $userId): float
+    {
+        return round((float) DB::val('SELECT COALESCE(SUM(amount),0) FROM lo_deposits WHERE user_id = ?', [$userId]), 6);
+    }
+
     /** Transferable service credit: paid cashback minus what this member has sent out plus what they received. */
     public static function service(int $userId): float
     {
