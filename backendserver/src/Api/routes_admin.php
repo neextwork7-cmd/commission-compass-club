@@ -336,6 +336,17 @@ $router->post('/api/admin/balance-add', function () {
     if (!is_finite($amount) || $amount == 0.0 || abs($amount) > 1000000) throw new HttpError('Enter a valid amount', 422);
     $u = DB::one('SELECT id, life_id FROM users WHERE life_id = ?', [trim((string) ($b['life_id'] ?? ''))]);
     if (!$u) throw new HttpError('Member not found', 404);
+    if (($b['wallet'] ?? '') === 'DEPOSIT') {
+        $code = 'DEP-' . strtoupper(bin2hex(random_bytes(8)));
+        DB::tx(function () use ($u, $amount, $code, $admin, $b) {
+            DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [(int) $u['id']]);
+            if ($amount < 0 && \LifeOS\Engine\Wallet::deposit((int) $u['id']) + $amount < -1e-9) throw new HttpError('Deposit wallet cannot go below zero', 422);
+            DB::run("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, note) VALUES (?,?,'ADMIN_ADD',?,?)",
+                [$code, (int) $u['id'], $amount, mb_substr('By ' . $admin['name'] . ': ' . trim((string) ($b['note'] ?? 'Deposit')), 0, 255)]);
+        });
+        Http::ok(['payout_code' => $code, 'life_id' => $u['life_id'], 'amount' => $amount, 'wallet' => 'DEPOSIT']);
+        return;
+    }
     $code = 'ADJ-' . strtoupper(bin2hex(random_bytes(8)));
     DB::run('INSERT INTO lo_ledger (payout_code, user_id, ledger_type, amount, note) VALUES (?,?,?,?,?)',
         [$code, (int) $u['id'], 'ADJUSTMENT', $amount, mb_substr('By ' . $admin['name'] . ': ' . trim((string) ($b['note'] ?? 'Balance add')), 0, 255)]);
