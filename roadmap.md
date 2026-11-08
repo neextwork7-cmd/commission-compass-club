@@ -1,3 +1,10 @@
+# Current member wallet and activation request
+- [ ] Numeric-only captcha and actual package ID status.
+- [ ] Compact Cashback / Deposit / Withdraw / Total Balance cards.
+- [ ] Replace member transfer with fixed-package-price, deposit-only Active New ID; preserve transfer and package histories.
+- [ ] Remove enrollment BV Summary onward and matching rule text; retain matching reports.
+- [ ] Run focused rule tests and authenticated browser activation/history checks.
+
 # Current live admin/member completion
 - [x] Admin Cron/Test Lab: "Add 1 Day Sales" button (300 new paid, unsettled sales on current software date, keeps existing data); progress bar + percent for every Test Lab action.
 - [x] 4-day live test (live = local, 16/16 plan checks; fixed live daily cap using real date instead of software date) with rank + Binary/Enrollment matching split on member dashboard, admin dashboard, cron page.
