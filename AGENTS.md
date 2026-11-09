@@ -48,3 +48,4 @@
 - Admin login accepts email or username (admin_users.name) on the PHP API; the admin form uses a text field so usernames like Admin are not blocked by email validation.
 - Test Lab offers Reset (ROOT kept, clock back to today, nothing created), Create 300 Members, Add 1 Day Sales and Run 1 Day; every action runs under one MySQL GET_LOCK, Run 1 Day settles in ~40s resumable slices (host proxy limit 100s), and progress records are matched by a browser run_id because the host clock drifts.
 - Any code that needs "today" for money (daily caps, statements) must read MySQL CURRENT_DATE(), never PHP date(), so the Test Lab clock and real clock always agree.
+- Active New ID uses an append-only deposit ledger and one transaction for the fixed package payment and activation; legacy transfer writes return Gone so cashback cannot fund this replacement flow.
