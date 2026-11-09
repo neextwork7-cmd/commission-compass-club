@@ -68,7 +68,8 @@ $router->post('/api/member/register', function () {
         $id = DB::insert(
             'INSERT INTO users (life_id, membership_no, referral_code, referred_by, phone, email, pin_hash, status, accepted_terms)
              VALUES (?,?,?,?,?,?,?,"pending",?)',
-            [$lifeId, $lifeId, $refCode, $b['referral_code'] ?? null, $b['phone'], $b['email'] ?? null,
+            // referred_by holds the sponsor's Life ID, matching the imported members' records.
+            [$lifeId, $lifeId, $refCode, $sponsorId ? DB::val('SELECT life_id FROM users WHERE id = ?', [$sponsorId]) : null, $b['phone'], $b['email'] ?? null,
              password_hash((string) $b['pin'], PASSWORD_DEFAULT), !empty($b['accepted_terms']) ? 1 : 0]
         );
         if ($username !== '') DB::run('UPDATE users SET username = ? WHERE id = ?', [$username, $id]);
@@ -87,7 +88,8 @@ $router->post('/api/member/register', function () {
 // Public sponsor lookup for the join page: name + Life ID only, never financial data.
 $router->get('/api/member/sponsor', function () {
     $code = (string) ($_GET['code'] ?? '');
-    if (!preg_match('/^[A-Za-z0-9]{4,20}$/', $code)) throw new HttpError('Invalid referral code');
+    // Imported members keep their old codes such as LIFE-T58BP, so a hyphen is allowed.
+    if (!preg_match('/^[A-Za-z0-9-]{4,20}$/', $code)) throw new HttpError('Invalid referral code');
     $sp = DB::one('SELECT u.id, u.life_id FROM users u WHERE u.referral_code = ? AND u.status <> "suspended"', [$code]);
     if (!$sp) throw new HttpError('Invalid referral code', 404);
     $name = DB::val('SELECT name FROM user_profiles WHERE user_id = ? ORDER BY id LIMIT 1', [(int) $sp['id']]);
@@ -459,7 +461,9 @@ $router->get('/api/member/rank', function () {
     $uid = (int) $u['id'];
     $matchings = (int) DB::val('SELECT lifetime_matchings FROM lo_tree WHERE user_id = ?', [$uid]);
     $current = Rank::current($uid);
-    $next = DB::one('SELECT * FROM lo_ranks WHERE required_matchings > ? ORDER BY required_matchings LIMIT 1', [$matchings]);
+    // Imported members keep an earned rank before new matchings accrue; the next rank is always above it.
+    $floor = max($matchings, (int) ($current['required_matchings'] ?? 0));
+    $next = DB::one('SELECT * FROM lo_ranks WHERE required_matchings > ? ORDER BY required_matchings LIMIT 1', [$floor]);
     Http::ok(['lifetime_matchings' => $matchings, 'current' => $current, 'next' => $next]);
 });
 

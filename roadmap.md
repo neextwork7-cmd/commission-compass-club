@@ -1,7 +1,10 @@
 # Current legacy database import request
-- [ ] Obtain the user-provided Google Drive SQL ZIP through authorized Drive access; inspect archive without executing it.
-- [ ] Compare legacy users and all related records with current schema; validate isolated import and conflicts without overwriting live records.
-- [ ] Prepare a complete phpMyAdmin SQL import file and reconcile counts/balances; import approved compatible data into the live server with backup and verification.
+- [x] Download old site SQL (lifeosbd_new.sql, 72,753 users) and analyse it in an isolated local database.
+- [ ] Build refined local DB: users, profiles (no images), sponsor + binary tree, active package records (already settled, no new commission), kept ranks, old transaction history; all balances zero.
+- [ ] Verify locally with the real PHP API (old member login, dashboard Activated, trees, admin pages) and a new activation after import.
+- [ ] Produce phpMyAdmin import file (compressed) and Bangla instructions.
+- [ ] Live: back up admin/settings, turn Test Lab off, wipe test members, load refined data in chunks, verify counts and browser login.
+- [ ] Development/preview API uses https://server.nexarofx.com (lifeos/backendserver); cPanel build keeps current-domain /backendserver.
 
 # Current cPanel deployment request
 - [x] Build portable root-domain cPanel package: same-origin /backendserver/api, TanStack SPA shell, Apache fallback, configuration template and all eight migrations; no credentials, live config or database dump.
