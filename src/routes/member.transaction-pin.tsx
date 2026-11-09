@@ -4,7 +4,7 @@ import { Msg, Page, useMember } from "@/components/member-kit";
 import { memberApi } from "@/lib/member-api";
 
 export const Route = createFileRoute("/member/transaction-pin")({
-  head: () => ({ meta: [{ title: "Transaction Password — Life OS Member" }, { name: "description", content: "Set the Life OS transaction password used to approve balance transfers." }, { property: "og:title", content: "Transaction Password — Life OS Member" }, { property: "og:description", content: "Set the Life OS transaction password used to approve balance transfers." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Transaction Password — Life OS Member" }, { name: "description", content: "Set the Life OS transaction password used to activate a new ID." }, { property: "og:title", content: "Transaction Password — Life OS Member" }, { property: "og:description", content: "Set the Life OS transaction password used to activate a new ID." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: TransactionPin,
 });
 
@@ -27,7 +27,7 @@ function TransactionPin() {
   };
   return (
     <Page title="Reset Transaction PIN">
-      <Msg ok={msg?.ok} text={msg?.t ?? (me.data && !me.data.transaction_pin_set ? "You have not set a transaction password yet. Balance transfers need one." : null)} />
+      <Msg ok={msg?.ok} text={msg?.t ?? (me.data && !me.data.transaction_pin_set ? "You have not set a transaction password yet. Active New ID requires one." : null)} />
       <form onSubmit={submit}>
         <table width="100%" border={0} cellSpacing={5} cellPadding={0}>
           <tbody>

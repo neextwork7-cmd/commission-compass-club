@@ -69,7 +69,7 @@ function SiteConfig() {
                 <tr key={k}>
                   <th align="right">{label}</th>
                   <td>
-                    <select value={s?.[k] ?? "1"} onChange={(e) => set(k, e.target.value)}>
+                    <select value={s?.[k] ?? (k === "transfer_status" || k === "recharge_status" ? "0" : "1")} onChange={(e) => set(k, e.target.value)}>
                       <option value="1">On</option>
                       <option value="0">Off</option>
                     </select>
@@ -85,8 +85,6 @@ function SiteConfig() {
               <tr><th align="right">Minimum Withdrawal (BDT)</th><td>{input("withdraw_min", { type: "number", min: 0 })}</td></tr>
               <tr><th align="right">Maximum Withdrawal (BDT)</th><td>{input("withdraw_max", { type: "number", min: 0 })}</td></tr>
               <tr><th align="right">Withdrawal Charge (%)</th><td>{input("withdraw_charge_pct", { type: "number", min: 0, max: 100, step: "0.01" })}</td></tr>
-              <tr><th align="right">Minimum Balance Transfer (BDT)</th><td>{input("transfer_min", { type: "number", min: 0 })}</td></tr>
-              <tr><th align="right">Maximum Balance Transfer (BDT)</th><td>{input("transfer_max", { type: "number", min: 0 })}</td></tr>
               <tr><th align="right">Minimum Recharge (BDT)</th><td>{input("recharge_min", { type: "number", min: 0 })}</td></tr>
               <tr><th align="right">Maximum Recharge (BDT)</th><td>{input("recharge_max", { type: "number", min: 0 })}</td></tr>
             </tbody>
