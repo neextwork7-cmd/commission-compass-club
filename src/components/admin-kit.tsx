@@ -88,9 +88,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
     else setReady(true);
   }, [navigate]);
 
-  const me = useAdmin<{ name: string; email: string }>("me", "/me", ready);
+  const me = useAdmin<{ name: string; email: string; token?: string }>("me", "/me", ready);
+  // Store the renewed session so an admin who keeps using the panel stays signed in.
   useEffect(() => {
-    if (me.error) navigate({ to: "/admin/login" });
+    if (me.data?.token) adminToken.set(me.data.token);
+  }, [me.data?.token]);
+  // Only a rejected session signs the admin out; a temporary server outage keeps the session.
+  useEffect(() => {
+    if (me.error && !adminToken.get()) navigate({ to: "/admin/login" });
   }, [me.error, navigate]);
 
   const logout = () => {
@@ -137,7 +142,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </div>
         <div id="wrapper">
           <div className="mid_image">
-            <div id="main_admin">{ready && me.data ? children : <div className="main_bg about"><h2 id="heading">Loading…</h2></div>}</div>
+            <div id="main_admin">{ready && me.data ? children : (
+              <div className="main_bg about">
+                <h2 id="heading">{me.error ? "Admin server is not reachable right now — you are still signed in." : "Loading…"}</h2>
+                {me.error && <p style={{ textAlign: "center" }}><button type="button" onClick={() => me.refetch()}>Try again</button></p>}
+              </div>
+            )}</div>
             {me.data && <div className="my-userid">Admin: {me.data.name} ({me.data.email})</div>}
             <div className="print"><img src="/member-kit/images/printer.png" width={32} alt="Print" title="Print Inner Content" onClick={() => printInner()} /></div>
           </div>
