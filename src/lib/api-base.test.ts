@@ -11,6 +11,9 @@ describe("cPanel same-host API", () => {
     expect(new URL(`${resolveApiBase('/backendserver/api')}/admin/login`, "https://other.example/admin/login").href)
       .toBe("https://other.example/backendserver/api/admin/login");
   });
+  it("uses the server.nexarofx.com development server by default", () => {
+    expect(resolveApiBase(undefined)).toBe("https://server.nexarofx.com/lifeos/backendserver/api");
+  });
   it("retains explicit API configuration outside cPanel", () => {
     expect(resolveApiBase("https://api.example/app/api/")).toBe("https://api.example/app/api");
   });
