@@ -66,12 +66,23 @@ def build_tree(rows):
             placed[uid] = (parent, s)
     moved = []
     for uid, parent, s in extras:
-        cur = parent
-        while (cur, s) in child:
-            cur = child[(cur, s)]
-        child[(cur, s)] = uid
-        placed[uid] = (cur, s)
-        moved.append((uid, parent, cur, s))
+        if (parent, s) not in child:
+            child[(parent, s)] = uid
+            placed[uid] = (parent, s)
+            moved.append((uid, parent, parent, s))
+            continue
+        # Nearest free slot (level order, left first) inside the same-side subtree of the original parent.
+        queue, head, spot = [child[(parent, s)]], 0, None
+        while spot is None:
+            n = queue[head]; head += 1
+            for side in ("L", "R"):
+                if (n, side) not in child:
+                    spot = (n, side)
+                    break
+                queue.append(child[(n, side)])
+        child[spot] = uid
+        placed[uid] = spot
+        moved.append((uid, parent, spot[0], spot[1]))
     # Every member must be reachable from ROOT (no cycles / orphans).
     kids = defaultdict(list)
     for (p, s), c in child.items():
