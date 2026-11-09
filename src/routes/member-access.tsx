@@ -25,9 +25,12 @@ function MemberAccess() {
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.hash.slice(1)).get("t");
-    window.history.replaceState(null, "", window.location.pathname);
-    if (!token) { setFailed(true); return; }
-    memberToken.startAdminSession(token);
+    if (token) {
+      memberToken.startAdminSession(token);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    // Safe to run twice: the session stays in this tab once the link was read.
+    if (!memberToken.isAdminSession()) { setFailed(true); return; }
     navigate({ to: "/member", replace: true });
   }, [navigate]);
 
