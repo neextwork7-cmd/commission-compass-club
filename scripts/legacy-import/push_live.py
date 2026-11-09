@@ -69,6 +69,8 @@ def load(budget):
     s = state()
     db = pymysql.connect(unix_socket=SOCK, user="root", database=SOURCE, charset="utf8mb4")
     cur = db.cursor()
+    # The live API session runs at +06:00; read TIMESTAMP values in the same zone so instants are preserved.
+    cur.execute("SET time_zone = '+06:00'")
     for table, order in LOAD:
         done = s.get(table, 0)
         cur.execute(f"SELECT COUNT(*) FROM `{table}`")
