@@ -506,6 +506,7 @@ $router->get('/api/member/withdrawals', function () {
 // ---- Balance transfer: service (cashback) credit only, withdrawable funds never move ----
 $router->post('/api/member/transfers', function () {
     $u = Auth::member();
+    throw new HttpError('Balance Transfer has been replaced by Active New ID', 410);
     $b = Http::body();
     $uid = (int) $u['id'];
     $receiver = trim((string) ($b['receiver'] ?? ''));

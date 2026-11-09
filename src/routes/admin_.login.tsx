@@ -20,7 +20,7 @@ export const Route = createFileRoute("/admin_/login")({
 
 const DEMO_EMAIL = "demo@lifeos.test";
 const DEMO_PASS = "Demo@1234";
-const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const CHARS = "0123456789";
 const makeCode = () => Array.from({ length: 5 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join("");
 
 function AdminLogin() {

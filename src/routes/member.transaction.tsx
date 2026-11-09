@@ -28,7 +28,7 @@ function ActiveNewId() {
     } catch (err) { setMsg({ ok: false, t: (err as Error).message }); }
     finally { setBusy(false); }
   };
-  const disabled = settings.data?.["transfer_status"] === "0";
+  const disabled = settings.data?.["transfer_status"] !== "1";
   const low = Number(w.data?.deposit_balance ?? 0) < PACKAGE_FEE;
   return (
     <Page title="Active New ID">
