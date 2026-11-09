@@ -114,8 +114,8 @@ $router->post('/api/member/login', function () {
     $pw = (string) ($b['password'] ?? '');
     $u = null;
     if ($login !== '' && $pw !== '') {
-        $dashless = str_replace('-', '', $login);
-        $rows = DB::all('SELECT * FROM users WHERE phone = ? OR life_id = ? OR referral_code = ? OR username = ? OR REPLACE(life_id, \'-\', \'\') = ? ORDER BY id LIMIT 20', [$login, $login, $login, $login, $dashless]);
+        $dashed = preg_match('/^LID-?(\d{4})-?([A-Z0-9]+)$/i', $login, $m) ? strtoupper("LID-{$m[1]}-{$m[2]}") : $login;
+        $rows = DB::all('SELECT * FROM users WHERE phone = ? OR life_id = ? OR life_id = ? OR referral_code = ? OR username = ? ORDER BY id LIMIT 20', [$login, $login, $dashed, $login, $login]);
         foreach ($rows as $row) {
             $hash = (string) $row['pin_hash'];
             if (password_verify($pw, $hash) || (trim($pw) !== $pw && password_verify(trim($pw), $hash))) { $u = $row; break; }
