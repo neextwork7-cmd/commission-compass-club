@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { adminApi, adminToken, ADMIN_DEMO_TOKEN } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin_/login")({
@@ -28,6 +28,11 @@ function AdminLogin() {
   const [code, setCode] = useState(makeCode);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Already signed in: go straight back to the panel instead of asking again.
+  useEffect(() => {
+    if (adminToken.get()) navigate({ to: "/admin", replace: true });
+  }, [navigate]);
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

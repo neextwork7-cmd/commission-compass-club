@@ -30,6 +30,7 @@ import { Route as JoinUsRouteImport } from './routes/join-us'
 import { Route as LatestEventRouteImport } from './routes/latest-event'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MemberRouteImport } from './routes/member'
+import { Route as MemberAccessRouteImport } from './routes/member-access'
 import { Route as MilestonesRouteImport } from './routes/milestones'
 import { Route as NewsEventsRouteImport } from './routes/news-events'
 import { Route as PhotoGalleryRouteImport } from './routes/photo-gallery'
@@ -186,6 +187,11 @@ const LoginRoute = LoginRouteImport.update({
 const MemberRoute = MemberRouteImport.update({
   id: '/member',
   path: '/member',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemberAccessRoute = MemberAccessRouteImport.update({
+  id: '/member-access',
+  path: '/member-access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MilestonesRoute = MilestonesRouteImport.update({
@@ -471,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/latest-event': typeof LatestEventRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRouteWithChildren
+  '/member-access': typeof MemberAccessRoute
   '/milestones': typeof MilestonesRoute
   '/news-events': typeof NewsEventsRoute
   '/photo-gallery': typeof PhotoGalleryRoute
@@ -544,6 +551,7 @@ export interface FileRoutesByTo {
   '/join-us': typeof JoinUsRoute
   '/latest-event': typeof LatestEventRoute
   '/login': typeof LoginRoute
+  '/member-access': typeof MemberAccessRoute
   '/milestones': typeof MilestonesRoute
   '/news-events': typeof NewsEventsRoute
   '/photo-gallery': typeof PhotoGalleryRoute
@@ -620,6 +628,7 @@ export interface FileRoutesById {
   '/latest-event': typeof LatestEventRoute
   '/login': typeof LoginRoute
   '/member': typeof MemberRouteWithChildren
+  '/member-access': typeof MemberAccessRoute
   '/milestones': typeof MilestonesRoute
   '/news-events': typeof NewsEventsRoute
   '/photo-gallery': typeof PhotoGalleryRoute
@@ -697,6 +706,7 @@ export interface FileRouteTypes {
     | '/latest-event'
     | '/login'
     | '/member'
+    | '/member-access'
     | '/milestones'
     | '/news-events'
     | '/photo-gallery'
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/join-us'
     | '/latest-event'
     | '/login'
+    | '/member-access'
     | '/milestones'
     | '/news-events'
     | '/photo-gallery'
@@ -845,6 +856,7 @@ export interface FileRouteTypes {
     | '/latest-event'
     | '/login'
     | '/member'
+    | '/member-access'
     | '/milestones'
     | '/news-events'
     | '/photo-gallery'
@@ -921,6 +933,7 @@ export interface RootRouteChildren {
   LatestEventRoute: typeof LatestEventRoute
   LoginRoute: typeof LoginRoute
   MemberRoute: typeof MemberRouteWithChildren
+  MemberAccessRoute: typeof MemberAccessRoute
   MilestonesRoute: typeof MilestonesRoute
   NewsEventsRoute: typeof NewsEventsRoute
   PhotoGalleryRoute: typeof PhotoGalleryRoute
@@ -1080,6 +1093,13 @@ declare module '@tanstack/react-router' {
       path: '/member'
       fullPath: '/member'
       preLoaderRoute: typeof MemberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/member-access': {
+      id: '/member-access'
+      path: '/member-access'
+      fullPath: '/member-access'
+      preLoaderRoute: typeof MemberAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/milestones': {
@@ -1572,6 +1592,7 @@ const rootRouteChildren: RootRouteChildren = {
   LatestEventRoute: LatestEventRoute,
   LoginRoute: LoginRoute,
   MemberRoute: MemberRouteWithChildren,
+  MemberAccessRoute: MemberAccessRoute,
   MilestonesRoute: MilestonesRoute,
   NewsEventsRoute: NewsEventsRoute,
   PhotoGalleryRoute: PhotoGalleryRoute,
