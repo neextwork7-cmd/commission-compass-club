@@ -24,7 +24,7 @@
 - Every consumed binary/enrollment volume unit records its source sale in lo_volumes and its pair in lo_volume_pairs (decision-keyed); carries must never lose source identity, so audits can trace any payout back to the sale that funded it.
 - Rank reward references are scoped to their beneficiary and validated under the pool lock before balance checks; this keeps replay safe after funds change and prevents changed-amount requests from appearing paid.
 - Member routes use a separate scoped reference shell and client-hydrated PHP bearer session; private account queries run only after the server validates the session, so public pages and SSR contain no member financial data.
-- The member API base uses VITE_LIFEOS_API_URL with an external-host fallback; the optional relative development prefix still uses the Vite proxy.
+- Member/admin API clients share one base resolver; cPanel builds force same-origin /backendserver/api regardless of build-machine environment, while hosted previews retain VITE_LIFEOS_API_URL and the external fallback, so downloadable deployments are domain-portable.
 - PHP database initialization and signed migration requests share Migrations::apply; legacy dump initialization executes additive structure only to preserve existing accounts and avoid destructive resets.
 - The backend reads only its own backendserver/.env (overrides config.php); the app and scripts/master-update.py read the root .env (non-VITE vars never reach the browser). Empty .env values are ignored so a deployed backendserver/.env never blanks live passwords or the app secret.
 - Package all database migrations automatically; scoped live updates must use the updater's explicit file selection so missing schema cannot silently break activation.

@@ -1,3 +1,7 @@
+# Current cPanel deployment request
+- [ ] Build a portable cPanel package with current-host /backendserver API, safe configuration templates and all migrations.
+- [ ] Run address-rule tests, inspect the ZIP for private files, and verify exported pages and API requests in a browser; document hosting prerequisites.
+
 # Current member wallet and activation request
 - [x] Numeric-only captcha and actual package ID status.
 - [x] Compact Cashback / Deposit / Withdraw / Total Balance cards.

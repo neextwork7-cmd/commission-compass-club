@@ -14,6 +14,7 @@ const cpanelRouterBasePath = cpanelBasePath.replace(/\/$/, "") || "/";
 export default defineConfig({
   vite: {
     base: isCpanelBuild ? cpanelBasePath : "/",
+    ...(isCpanelBuild ? { define: { 'import.meta.env.VITE_LIFEOS_API_URL': JSON.stringify('/backendserver/api') } } : {}),
     server: {
       proxy: {
         "/backendserver/api": {
