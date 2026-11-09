@@ -114,7 +114,7 @@ def main():
     cur = db.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS=0")
     for t in MEMBER_TABLES:
-        cur.execute(f"DELETE FROM `{t}`")
+        cur.execute(f"TRUNCATE TABLE `{t}`")  # also resets ids so the import file starts clean
     cur.execute("UPDATE lo_pools SET balance=0")
     cur.execute("DELETE FROM lo_settings WHERE k IN ('test_clock_date','test_lab_days','test_lab_last','test_lab_progress','test_lab_job','cron_last_run')")
 
