@@ -3,7 +3,7 @@
 - [x] Compact Cashback / Deposit / Withdraw / Total Balance cards.
 - [x] Replace member transfer with fixed-package-price, deposit-only Active New ID; preserve transfer and package histories.
 - [x] Remove enrollment BV Summary onward and matching rule text; retain matching reports.
-- [ ] Run focused rule tests and authenticated browser activation/history checks, then deploy (local DB not available this session).
+- [x] 2026-11-09: signed live deployment and identical readback of Wallet/member/admin API + deposit migration; published frontend at binary-bloom-commissions.lovable.app. Real published admin/member login, deposit credit, fixed-price activation, both histories, ID status and matching/admin pages passed with zero browser errors; five live financial assertions, three frontend tests and two packaging tests passed. Four isolated QA members and two unsettled activations retained; Active New ID switch restored off. Automatic cron execution and unrelated historical roadmap items remain unverified this turn.
 
 # Current live admin/member completion
 - [x] Admin Cron/Test Lab: "Add 1 Day Sales" button (300 new paid, unsettled sales on current software date, keeps existing data); progress bar + percent for every Test Lab action.
