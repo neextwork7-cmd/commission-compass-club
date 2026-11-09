@@ -1,3 +1,8 @@
+# Current legacy database import request
+- [ ] Obtain the user-provided Google Drive SQL ZIP through authorized Drive access; inspect archive without executing it.
+- [ ] Compare legacy users and all related records with current schema; validate isolated import and conflicts without overwriting live records.
+- [ ] Prepare a complete phpMyAdmin SQL import file and reconcile counts/balances; import approved compatible data into the live server with backup and verification.
+
 # Current cPanel deployment request
 - [x] Build portable root-domain cPanel package: same-origin /backendserver/api, TanStack SPA shell, Apache fallback, configuration template and all eight migrations; no credentials, live config or database dump.
 - [x] Six frontend tests and two existing packaging tests pass; exported home/About/login/admin login and protected redirects tested; real packaged PHP captcha loads and refreshes with zero browser errors; all packaged PHP files lint; ZIP integrity/private-file audit passes. Hosting MySQL/login/commission execution needs installation and private configuration; Bangla instructions included.
