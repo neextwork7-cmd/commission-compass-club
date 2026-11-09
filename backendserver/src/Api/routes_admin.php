@@ -46,10 +46,39 @@ $router->get('/api/admin/members', function () {
 $router->post('/api/admin/members/{id}/status', function ($p) {
     Auth::admin();
     $b = Http::body();
-    if (!in_array($b['status'] ?? '', ['active', 'suspended', 'pending'], true)) throw new HttpError('Invalid status');
+    $status = strtolower((string) ($b['status'] ?? ''));
+    if (!in_array($status, ['active', 'suspended', 'pending'], true)) throw new HttpError('Invalid status');
     if (!DB::one('SELECT id FROM users WHERE id = ?', [(int) $p['id']])) throw new HttpError('Member not found', 404);
-    DB::run('UPDATE users SET status = ? WHERE id = ?', [$b['status'], (int) $p['id']]);
+    DB::run('UPDATE users SET status = ? WHERE id = ?', [$status, (int) $p['id']]);
     Http::ok();
+});
+
+function adminAudit(array $admin, string $action, int $userId): void
+{
+    DB::run('INSERT INTO lo_admin_audit (admin_id, action, user_id, ip) VALUES (?, ?, ?, ?)',
+        [(int) $admin['id'], $action, $userId, substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)]);
+}
+
+// Admin sets a new login password for any member (no current password needed).
+$router->post('/api/admin/members/{id}/password', function ($p) {
+    $admin = Auth::admin();
+    $pw = (string) (Http::body()['password'] ?? '');
+    if (strlen($pw) < 6 || strlen($pw) > 72) throw new HttpError('New password must be 6–72 characters', 422);
+    $id = (int) $p['id'];
+    if (!DB::one('SELECT id FROM users WHERE id = ?', [$id])) throw new HttpError('Member not found', 404);
+    DB::run('UPDATE users SET pin_hash = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $id]);
+    adminAudit($admin, 'SET_PASSWORD', $id);
+    Http::ok(['changed' => true]);
+});
+
+// One-click login: a short-lived member session for a separate browser tab; the admin session is untouched.
+$router->post('/api/admin/members/{id}/login-as', function ($p) {
+    $admin = Auth::admin();
+    $u = DB::one('SELECT id, life_id, status FROM users WHERE id = ?', [(int) $p['id']]);
+    if (!$u) throw new HttpError('Member not found', 404);
+    if ($u['status'] === 'suspended') throw new HttpError('Account is suspended — set it Active first', 403);
+    adminAudit($admin, 'LOGIN_AS', (int) $u['id']);
+    Http::ok(['token' => Auth::issue('m', (int) $u['id'], 60 * 60 * 4, ['imp' => (int) $admin['id']]), 'life_id' => $u['life_id']]);
 });
 
 // Payment gateway / manual confirmation: only SUCCESS triggers commissions.
@@ -408,5 +437,6 @@ $router->post('/api/admin/password', function () {
 
 $router->get('/api/admin/me', function () {
     $admin = Auth::admin();
-    Http::ok(['id' => (int) $admin['id'], 'name' => $admin['name'], 'email' => $admin['email']]);
+    // Sliding renewal: an admin who keeps using the panel is never signed out.
+    Http::ok(['id' => (int) $admin['id'], 'name' => $admin['name'], 'email' => $admin['email'], 'token' => Auth::issue('a', (int) $admin['id'])]);
 });

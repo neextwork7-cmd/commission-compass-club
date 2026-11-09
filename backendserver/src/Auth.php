@@ -6,9 +6,11 @@ namespace LifeOS;
 /** Stateless HMAC-signed bearer tokens for members ("m") and admins ("a"). */
 final class Auth
 {
-    public static function issue(string $kind, int $id): string
+    /** Admin sessions last 30 days by default and are renewed on every panel load. */
+    public static function issue(string $kind, int $id, ?int $ttl = null, array $extra = []): string
     {
-        $payload = self::b64(json_encode(['k' => $kind, 'id' => $id, 'exp' => time() + (int) Config::get('token_ttl', 43200)]));
+        $ttl ??= $kind === 'a' ? (int) Config::get('admin_token_ttl', 60 * 60 * 24 * 30) : (int) Config::get('token_ttl', 43200);
+        $payload = self::b64(json_encode(['k' => $kind, 'id' => $id, 'exp' => time() + $ttl] + $extra));
         return $payload . '.' . self::b64(hash_hmac('sha256', $payload, Config::get('app_secret'), true));
     }
 
