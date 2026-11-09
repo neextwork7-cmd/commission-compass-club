@@ -6,6 +6,10 @@
 - [x] Live: back up admin/settings, turn Test Lab off, wipe test members, load refined data in chunks, verify counts and browser login.
 - [x] Development/preview API uses https://server.nexarofx.com (lifeos/backendserver); cPanel build keeps current-domain /backendserver.
 
+# Admin member password + one-click login
+- [x] Admin sets any member password; one-click Login as member in a new tab; admin session kept (30-day sliding). Backend deployed; live browser test passed with zero errors.
+- [x] 2026-11-09: QA member LID-2026-11AC8F original password restored on live (hash verified); cPanel package rebuilt as LifeOS-cPanel_v3.zip (includes 010_admin_audit, no secrets/dev host, 9 frontend tests pass); frontend publish requested.
+
 # Current cPanel deployment request
 - [x] Build portable root-domain cPanel package: same-origin /backendserver/api, TanStack SPA shell, Apache fallback, configuration template and all eight migrations; no credentials, live config or database dump.
 - [x] Six frontend tests and two existing packaging tests pass; exported home/About/login/admin login and protected redirects tested; real packaged PHP captcha loads and refreshes with zero browser errors; all packaged PHP files lint; ZIP integrity/private-file audit passes. Hosting MySQL/login/commission execution needs installation and private configuration; Bangla instructions included.
