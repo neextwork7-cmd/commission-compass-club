@@ -84,8 +84,8 @@ function MemberList() {
                 <option value="" disabled>Change…</option>
                 {["ACTIVE", "SUSPENDED", "PENDING"].filter((s) => s !== status).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>,
-              <button key="p" type="button" style={btn} onClick={() => { setPwFor(m); setPw(""); setPwErr(null); }} aria-label={`Set new password for ${m.life_id}`}>Set Password</button>,
-              <button key="l" type="button" style={{ ...btn, background: "#009541", color: "#fff" }} onClick={() => loginAs(m)} aria-label={`Login as ${m.life_id}`}>Login</button>,
+              <button key="p" type="button" style={{ ...btn, whiteSpace: "nowrap" }} onClick={() => { setPwFor(m); setPw(""); setPwErr(null); }} aria-label={`Set new password for ${m.life_id}`}>Set Password</button>,
+              <button key="l" type="button" style={{ ...btn, whiteSpace: "nowrap", background: "#009541", color: "#fff" }} onClick={() => loginAs(m)} aria-label={`Login as ${m.life_id}`}>Login</button>,
             ];
           })}
         />

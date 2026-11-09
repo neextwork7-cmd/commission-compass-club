@@ -55,7 +55,8 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
 ];
 
 export function useAdmin<T>(key: string, path: string, enabled = true) {
-  return useQuery({ queryKey: ["admin", key], queryFn: () => adminApi<T>(path), enabled, retry: false });
+  // The path (with its search/date filters) is part of the key so every new search loads fresh results.
+  return useQuery({ queryKey: ["admin", key, path], queryFn: () => adminApi<T>(path), enabled, retry: false });
 }
 
 function printInner() {
