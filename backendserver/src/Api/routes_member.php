@@ -108,8 +108,20 @@ $router->post('/api/member/login', function () {
     if (!\LifeOS\PanelPolicy::enabled(DB::val("SELECT v FROM lo_settings WHERE k = 'login_status'"))) throw new HttpError('Member login is currently disabled', 403);
     $b = Http::body();
     \LifeOS\Captcha::verify($b['challenge_id'] ?? null, $b['security_code'] ?? null);
-    $u = DB::one('SELECT * FROM users WHERE phone = ? OR life_id = ? OR referral_code = ? OR username = ?', [$b['username'] ?? '', $b['username'] ?? '', $b['username'] ?? '', $b['username'] ?? '']);
-    if (!$u || !password_verify((string) ($b['password'] ?? ''), (string) $u['pin_hash'])) {
+    // Old-site compatible: Life ID with or without dashes, phone, referral code or username.
+    // A phone shared by several imported accounts resolves to the one whose password matches.
+    $login = trim((string) ($b['username'] ?? ''));
+    $pw = (string) ($b['password'] ?? '');
+    $u = null;
+    if ($login !== '' && $pw !== '') {
+        $dashless = str_replace('-', '', $login);
+        $rows = DB::all('SELECT * FROM users WHERE phone = ? OR life_id = ? OR referral_code = ? OR username = ? OR REPLACE(life_id, \'-\', \'\') = ? ORDER BY id LIMIT 20', [$login, $login, $login, $login, $dashless]);
+        foreach ($rows as $row) {
+            $hash = (string) $row['pin_hash'];
+            if (password_verify($pw, $hash) || (trim($pw) !== $pw && password_verify(trim($pw), $hash))) { $u = $row; break; }
+        }
+    }
+    if (!$u) {
         throw new HttpError('Invalid credentials', 401);
     }
     if ($u['status'] === 'suspended') throw new HttpError('Account suspended', 403);
