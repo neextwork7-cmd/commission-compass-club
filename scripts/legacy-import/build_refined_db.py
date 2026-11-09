@@ -119,9 +119,8 @@ def main():
     psel = ", ".join("NULL" if c in IMAGE_COLUMNS else f"p.`{c}`" for c in pcols)
     cur.execute(f"""INSERT INTO user_profiles ({', '.join('`'+c+'`' for c in pcols)})
         SELECT {psel} FROM `{LEGACY}`.user_profiles p
-        JOIN (SELECT user_id, MAX(id) id FROM `{LEGACY}`.user_profiles x
-              WHERE (x.updated_at, x.id) = (SELECT y.updated_at, y.id FROM `{LEGACY}`.user_profiles y WHERE y.user_id=x.user_id ORDER BY y.updated_at DESC, y.id DESC LIMIT 1)
-              GROUP BY user_id) k ON k.id = p.id
+        JOIN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC, id DESC) rn
+              FROM `{LEGACY}`.user_profiles) x WHERE rn = 1) k ON k.id = p.id
         JOIN users u ON u.id = p.user_id ORDER BY p.user_id""")
     cur.execute("INSERT INTO user_profiles (user_id, name, created_at) SELECT u.id, NULL, u.created_at FROM users u WHERE NOT EXISTS (SELECT 1 FROM user_profiles p WHERE p.user_id=u.id)")
     cur.execute("INSERT INTO user_wallets (user_id, updated_at) SELECT id, created_at FROM users ORDER BY id")
