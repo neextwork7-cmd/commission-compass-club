@@ -459,7 +459,9 @@ $router->get('/api/member/rank', function () {
     $uid = (int) $u['id'];
     $matchings = (int) DB::val('SELECT lifetime_matchings FROM lo_tree WHERE user_id = ?', [$uid]);
     $current = Rank::current($uid);
-    $next = DB::one('SELECT * FROM lo_ranks WHERE required_matchings > ? ORDER BY required_matchings LIMIT 1', [$matchings]);
+    // Imported members keep an earned rank before new matchings accrue; the next rank is always above it.
+    $floor = max($matchings, (int) ($current['required_matchings'] ?? 0));
+    $next = DB::one('SELECT * FROM lo_ranks WHERE required_matchings > ? ORDER BY required_matchings LIMIT 1', [$floor]);
     Http::ok(['lifetime_matchings' => $matchings, 'current' => $current, 'next' => $next]);
 });
 
