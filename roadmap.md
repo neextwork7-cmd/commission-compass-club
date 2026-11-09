@@ -1,3 +1,7 @@
+# Current cPanel deployment request
+- [x] Build portable root-domain cPanel package: same-origin /backendserver/api, TanStack SPA shell, Apache fallback, configuration template and all eight migrations; no credentials, live config or database dump.
+- [x] Six frontend tests and two existing packaging tests pass; exported home/About/login/admin login and protected redirects tested; real packaged PHP captcha loads and refreshes with zero browser errors; all packaged PHP files lint; ZIP integrity/private-file audit passes. Hosting MySQL/login/commission execution needs installation and private configuration; Bangla instructions included.
+
 # Current member wallet and activation request
 - [x] Numeric-only captcha and actual package ID status.
 - [x] Compact Cashback / Deposit / Withdraw / Total Balance cards.

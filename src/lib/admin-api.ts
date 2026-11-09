@@ -1,5 +1,5 @@
 // Browser-only client for the standalone PHP admin API (mirrors member-api).
-const BASE = ((import.meta.env["VITE_LIFEOS_API_URL"] as string | undefined) ?? "https://server.nexarofx.com/lifeos/backendserver/api").replace(/\/$/, "");
+import { LIFEOS_API_BASE as BASE } from "./api-base";
 export const ADMIN_API_BASE = BASE;
 const KEY = "lifeos_admin_token";
 export const ADMIN_DEMO_TOKEN = "demo";

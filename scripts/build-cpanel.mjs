@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync, writeFileSync } from "node:fs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const vite = resolve(root, "node_modules", "vite", "bin", "vite.js");
@@ -36,3 +37,21 @@ if (result.error) throw result.error;
 if (result.signal) throw new Error(`cPanel build was terminated by ${result.signal}`);
 
 process.exitCode = result.status ?? 1;
+if (process.exitCode === 0) {
+  const output = resolve(root, 'dist/client');
+  if (!existsSync(resolve(output, 'index.html'))) throw new Error('cPanel SPA shell was not generated');
+  writeFileSync(resolve(output, '.htaccess'), `Options -Indexes
+DirectoryIndex index.html
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# Never serve frontend HTML for a missing PHP API or asset.
+RewriteRule ^backendserver(?:/|$) - [L]
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^(?:assets|member-kit)(?:/|$) - [L]
+RewriteRule ^ index.html [L]
+</IfModule>
+`);
+  console.log(`cPanel upload files: ${output}; API: current domain/backendserver/api`);
+}
