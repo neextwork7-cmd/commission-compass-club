@@ -110,14 +110,24 @@ export function MemberShell({ children }: { children: ReactNode }) {
     if (me.error) navigate({ to: "/login" });
   }, [me.error, navigate]);
 
+  const [adminTab, setAdminTab] = useState(false);
+  useEffect(() => { setAdminTab(memberToken.isAdminSession()); }, []);
+
   const logout = () => {
+    const wasAdminTab = memberToken.isAdminSession();
     memberToken.clear();
+    if (wasAdminTab) window.close();
     navigate({ to: "/login" });
   };
 
   return (
     <div ref={ref} className="lifeos-member-viewport neel-viewport">
       <div id="wrapper" className="lifeos-member neel" style={{ zoom: scale }}>
+        {adminTab && me.data && (
+          <div style={{ background: "#C00", color: "#fff", textAlign: "center", padding: "6px 10px", fontWeight: 700, fontSize: 14 }}>
+            Admin login — you are viewing member {me.data.life_id ?? ""} ({me.data.name}). Logout closes only this tab.
+          </div>
+        )}
         <div className="mid_image">
           <div id="header">
             <div className="logo">
