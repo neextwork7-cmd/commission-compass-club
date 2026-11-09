@@ -1,11 +1,18 @@
 // Browser-only client for the standalone PHP member API.
 import { LIFEOS_API_BASE as BASE } from "./api-base";
 const KEY = "lifeos_member_token";
+// Admin one-click logins live only in that tab, so several member tabs and the admin panel can stay open together.
+const ADMIN_TAB_KEY = "lifeos_member_admin_session";
 
 export const memberToken = {
-  get: () => (typeof window === "undefined" ? null : window.localStorage.getItem(KEY)),
-  set: (t: string) => window.localStorage.setItem(KEY, t),
-  clear: () => window.localStorage.removeItem(KEY),
+  get: () => (typeof window === "undefined" ? null : window.sessionStorage.getItem(ADMIN_TAB_KEY) ?? window.localStorage.getItem(KEY)),
+  set: (t: string) => { window.sessionStorage.removeItem(ADMIN_TAB_KEY); window.localStorage.setItem(KEY, t); },
+  clear: () => {
+    if (window.sessionStorage.getItem(ADMIN_TAB_KEY)) window.sessionStorage.removeItem(ADMIN_TAB_KEY);
+    else window.localStorage.removeItem(KEY);
+  },
+  isAdminSession: () => typeof window !== "undefined" && !!window.sessionStorage.getItem(ADMIN_TAB_KEY),
+  startAdminSession: (t: string) => window.sessionStorage.setItem(ADMIN_TAB_KEY, t),
 };
 
 export class ApiError extends Error {
