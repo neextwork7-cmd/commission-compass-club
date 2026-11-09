@@ -53,12 +53,13 @@ export default defineConfig({
                 router: {
                   basepath: cpanelRouterBasePath,
                 },
+                spa: { enabled: true, prerender: { outputPath: '/index.html' } },
               }
             : {}),
           prerender: {
             enabled: true,
             crawlLinks: true,
-            autoStaticPathsDiscovery: true,
+            autoStaticPathsDiscovery: !isCpanelBuild,
             failOnError: true,
             filter: ({ path }: { path: string }) =>
               !path.startsWith("/assets/") && !path.startsWith(`${cpanelBasePath}assets/`),
